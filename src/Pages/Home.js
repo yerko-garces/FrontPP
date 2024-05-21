@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import './Login.css';
+import '../Assets/Login.css';
 
 function Login() {
   const [nombre, setNombre] = useState('');
@@ -10,11 +10,13 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const response = await axios.post('http://localhost:8080/api/login', {
         nombre,
         contrasena,
       });
+
       const token = response.data;
       localStorage.setItem('token', token);
       navigate('/dashboard');
@@ -27,7 +29,7 @@ function Login() {
   return (
     <div className="login-container">
       <div className="login-form">
-        <h2>Iniciar Sesión</h2>
+        <h2>Partner Prod</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Nombre de Usuario:</label>
@@ -47,6 +49,7 @@ function Login() {
           </div>
           <button type="submit">Iniciar Sesión</button>
         </form>
+        <button className="register-button" onClick={() => navigate('/register')}>Registrarse</button>
       </div>
     </div>
   );

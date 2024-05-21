@@ -6,7 +6,7 @@ import EscenaForm from './EscenaForm';
 import PersonajeForm from './PersonajeForm';
 import LocacionForm from './LocacionForm';
 import ItemForm from './ItemForm';
-import './Dashboard.css';
+import '../Assets/Dashboard.css';
 
 function Dashboard() {
   const [proyectos, setProyectos] = useState([]);
