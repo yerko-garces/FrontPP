@@ -39,3 +39,14 @@
     color: #666666;
     margin-bottom: 5px;
   }
+
+  .detail-checkbox {
+    display: flex;
+    align-items: center;
+  }
+  .detail-checkbox input[type="checkbox"] {
+    margin-right: 5px;
+  }
+  .detail-checkbox label {
+    margin-left: 5px;
+  }

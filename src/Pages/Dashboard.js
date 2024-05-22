@@ -40,6 +40,8 @@ function Dashboard() {
   const [escenasExpanded, setEscenasExpanded] = useState(false);
 
 
+
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -110,12 +112,20 @@ function Dashboard() {
     setShowProyectoDetalle(!showProyectoDetalle);
   };
 
+  const toggleCapituloForm = () => {
+    setShowCapituloForm((prevState) => !prevState);
+  };
+
   const toggleCapitulos = () => {
     setCapitulosExpanded(!capitulosExpanded);
   };
-  
+
   const toggleEscenas = () => {
     setEscenasExpanded(!escenasExpanded);
+  };
+
+  const toggleEscenaForm = () => {
+    setShowEscenaForm((prevState) => !prevState);
   };
 
   const handleProyectoSubmit = async (proyecto) => {
@@ -207,7 +217,7 @@ function Dashboard() {
       console.error(error);
     }
   };
-  
+
 
   const handleCapituloEdit = (capitulo) => {
     setEditingCapitulo(capitulo);
@@ -493,59 +503,61 @@ function Dashboard() {
 
   return (
     <div className="dashboard-container">
-       {!showProyectoDetails && (
-      <div className="proyecto-list">
-        <h1 style={{ textAlign: 'center' }}>Mis Proyectos</h1>
-        <ul>
-          {proyectos.map((proyecto) => (
-            <li key={proyecto.id} className="proyecto-item">
-              {editingProyecto && editingProyecto.id === proyecto.id ? (
-                <input
-                  type="text"
-                  value={editingProyecto.titulo}
-                  onChange={(e) =>
-                    setEditingProyecto({ ...editingProyecto, titulo: e.target.value })
-                  }
-                />
-              ) : (
-                <span>{proyecto.titulo}</span>
-              )}
-              <div className="proyecto-actions">
+      {!showProyectoDetails && (
+        <div className="proyecto-list">
+          <h1 style={{ textAlign: 'center' }}>Mis Proyectos</h1>
+          <ul>
+            {proyectos.map((proyecto) => (
+              <li key={proyecto.id} className="proyecto-item">
                 {editingProyecto && editingProyecto.id === proyecto.id ? (
-                  <>
-                    <button className="btn-confirm" onClick={() => handleProyectoEditConfirm(editingProyecto)}>
-                      <i className="fas fa-check"></i> Confirmar
-                    </button>
-                    <button className="btn-cancel" onClick={handleProyectoEditCancel}>
-                      <i className="fas fa-times"></i> Cancelar
-                    </button>
-                  </>
+                  <input
+                    type="text"
+                    value={editingProyecto.titulo}
+                    onChange={(e) =>
+                      setEditingProyecto({ ...editingProyecto, titulo: e.target.value })
+                    }
+                  />
                 ) : (
-                  <>
-                    <button className="btn-view" onClick={() => handleVerDetallesProyecto(proyecto)}>
-                      <i className="fas fa-info-circle"></i> Ver detalles
-                    </button>
-                    <button className="btn-edit" onClick={() => handleProyectoEdit(proyecto)}>
-                      <i className="fas fa-edit"></i> Editar
-                    </button>
-                    <button className="btn-delete" onClick={() => handleProyectoDelete(proyecto.id)}>
-                      <i className="fas fa-trash"></i> Eliminar
-                    </button>
-                  </>
+                  <span>{proyecto.titulo}</span>
                 )}
-              </div>
-            </li>
-          ))}
-        </ul>
-        <button className="btn-create" onClick={() => setShowProyectoForm(true)}>Crear Nuevo Proyecto</button>
-        {showProyectoForm && (
-          <ProyectoForm
-            usuarioId={usuarioId}
-            proyecto={selectedProyecto}
-            onSubmit={handleProyectoSubmit}
-          />
-        )}
-      </div>
+                <div className="proyecto-actions">
+                  {editingProyecto && editingProyecto.id === proyecto.id ? (
+                    <>
+                      <div className="button-container">
+                        <button className="btn-confirm" onClick={() => handleProyectoEditConfirm(editingProyecto)}>
+                          <i className="fas fa-check"></i> Confirmar
+                        </button>
+                        <button className="btn-cancel" onClick={handleProyectoEditCancel}>
+                          <i className="fas fa-times"></i> Cancelar
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <button className="btn-view" onClick={() => handleVerDetallesProyecto(proyecto)}>
+                        <i className="fas fa-info-circle"></i> Ver detalles
+                      </button>
+                      <button className="btn-edit" onClick={() => handleProyectoEdit(proyecto)}>
+                        <i className="fas fa-edit"></i> Editar nombre
+                      </button>
+                      <button className="btn-delete" onClick={() => handleProyectoDelete(proyecto.id)}>
+                        <i className="fas fa-trash"></i> Eliminar
+                      </button>
+                    </>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+          <button className="btn-create" onClick={() => setShowProyectoForm(true)}>Crear Nuevo Proyecto</button>
+          {showProyectoForm && (
+            <ProyectoForm
+              usuarioId={usuarioId}
+              proyecto={selectedProyecto}
+              onSubmit={handleProyectoSubmit}
+            />
+          )}
+        </div>
       )}
       <div className={`inventario-container ${showInventario ? 'visible' : ''}`}>
         <button className="inventario-toggle" onClick={() => setShowInventario(!showInventario)}>
@@ -636,129 +648,127 @@ function Dashboard() {
         )}
       </div>
       {selectedProyecto && (
-  <div className="proyecto-details">
-    <div className="close-details-button">
-      <button onClick={handleCloseProyectoDetails}>
-        <i className="fas fa-times"></i> Cerrar
-      </button>
-    </div>
-    <h1 style={{ textAlign: 'center' }}>Proyecto: {selectedProyecto.titulo}</h1>
-    <div className="capitulo-list">
-      <h4>Capítulos:</h4>
-      <button onClick={toggleCapitulos} className="btn-toggle">
-        {capitulosExpanded ? 'Ocultar Capítulos' : 'Mostrar Capítulos'}
-      </button>
-      {capitulosExpanded && (
-        <ul>
-          {selectedProyecto.capitulos &&
-            selectedProyecto.capitulos.map((capitulo) => (
-              <li key={capitulo.id} className="capitulo-item">
-                <button
-                  onClick={() => handleCapituloClick(capitulo)}
-                  style={{
-                    backgroundColor: selectedCapitulo && selectedCapitulo.id === capitulo.id ? '#007bff' : '#f0f0f0',
-                    color: selectedCapitulo && selectedCapitulo.id === capitulo.id ? '#fff' : '#333',
-                  }}
-                >
-                  {editingCapitulo && editingCapitulo.id === capitulo.id ? (
-                    <input
-                      type="text"
-                      value={editingCapitulo.nombre_capitulo}
-                      onChange={(e) => setEditingCapitulo({ ...editingCapitulo, nombre_capitulo: e.target.value })}
-                    />
-                  ) : (
-                    <span>{capitulo.nombre_capitulo}</span>
-                  )}
-                </button>
-                <div className="capitulo-actions">
-                  {editingCapitulo && editingCapitulo.id === capitulo.id ? (
-                    <>
-                      <button className="btn-confirm" onClick={() => handleCapituloEditConfirm(editingCapitulo)}>
-                        <i className="fas fa-check"></i> Confirmar
+        <div className="proyecto-details">
+          <div className="close-details-button">
+            <button onClick={handleCloseProyectoDetails}>
+              <i className="fas fa-times"></i> Cerrar
+            </button>
+          </div>
+          <h1 style={{ textAlign: 'center' }}>Proyecto: {selectedProyecto.titulo}</h1>
+          <div className="capitulo-list">
+            <h4>Capítulos:</h4>
+            <button onClick={toggleCapitulos} className="btn-toggle">
+              {capitulosExpanded ? 'Ocultar Capítulos' : 'Mostrar Capítulos'}
+            </button>
+            {capitulosExpanded && (
+              <ul>
+                {selectedProyecto.capitulos &&
+                  selectedProyecto.capitulos.map((capitulo) => (
+                    <li key={capitulo.id} className="capitulo-item">
+                      <button
+                        onClick={() => handleCapituloClick(capitulo)}
+                        style={{
+                          backgroundColor: selectedCapitulo && selectedCapitulo.id === capitulo.id ? '#007bff' : '#f0f0f0',
+                          color: selectedCapitulo && selectedCapitulo.id === capitulo.id ? '#fff' : '#333',
+                        }}
+                      >
+                        {editingCapitulo && editingCapitulo.id === capitulo.id ? (
+                          <input
+                            type="text"
+                            value={editingCapitulo.nombre_capitulo}
+                            onChange={(e) => setEditingCapitulo({ ...editingCapitulo, nombre_capitulo: e.target.value })}
+                          />
+                        ) : (
+                          <span>{capitulo.nombre_capitulo}</span>
+                        )}
                       </button>
-                      <button className="btn-cancel" onClick={handleCapituloEditCancel}>
-                        <i className="fas fa-times"></i> Cancelar
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button className="btn-edit" onClick={() => handleCapituloEdit(capitulo)}>
-                        <i className="fas fa-edit"></i> Editar
-                      </button>
-                      <button className="btn-delete" onClick={() => handleCapituloDelete(capitulo.id)}>
-                        <i className="fas fa-trash"></i> Eliminar
-                      </button>
-                    </>
-                  )}
-                </div>
-                {selectedCapitulo && selectedCapitulo.id === capitulo.id && (
-                  <div className="escena-list">
-                    <h5>Escenas:</h5>
-                    <button onClick={toggleEscenas} className="btn-toggle">
-                      {escenasExpanded ? 'Ocultar Escenas' : 'Mostrar Escenas'}
-                    </button>
-                    {escenasExpanded && (
-                      <ul>
-                        {selectedCapitulo.escenas &&
-                          selectedCapitulo.escenas.map((escena) => (
-                            <li key={escena.id} className="escena-item">
-                              <div className="escena-header">
-                                <span>{escena.titulo_escena}</span>
-                                <div className="escena-actions">
-                                  {selectedEscena && selectedEscena.id === escena.id ? (
-                                    <>
-                                      <button className="btn-cancel" onClick={() => setSelectedEscena(null)}>
-                                        <i className="fas fa-times"></i> Cancelar
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <button className="btn-edit" onClick={() => handleEscenaEdit(escena)}>
-                                        <i className="fas fa-edit"></i> Editar
-                                      </button>
-                                      <button className="btn-delete" onClick={() => handleEscenaDelete(escena.id)}>
-                                        <i className="fas fa-trash"></i> Eliminar
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                              <EscenaDetails
-                                escena={escena}
-                                personajes={personajes}
-                                locaciones={locaciones}
-                                items={bodega}
-                              />
-                            </li>
-                          ))}
-                      </ul>
-                    )}
-                    <button className="btn-create" onClick={() => setShowEscenaForm(true)}>
-                      Crear Nueva Escena
-                    </button>
-                    {showEscenaForm && (
-                      <EscenaForm
-                        capituloId={selectedCapitulo.id}
-                        escena={selectedEscena}
-                        personajes={personajes}
-                        locaciones={locaciones}
-                        items={bodega}
-                        onSubmit={handleEscenaSubmit}
-                      />
-                    )}
-                  </div>
-                )}
-              </li>
-            ))}
-        </ul>
-      )}
-      <button className="btn-create" onClick={() => setShowCapituloForm(true)}>
-        Crear Nuevo Capítulo
-      </button>
-      {showCapituloForm && (
-        <CapituloForm proyectoId={selectedProyecto.id} capitulo={selectedCapitulo} onSubmit={handleCapituloSubmit} />
-      )}
-    </div>
+                      <div className="capitulo-actions">
+                        {editingCapitulo && editingCapitulo.id === capitulo.id ? (
+                          <>
+                            <button className="btn-confirm" onClick={() => handleCapituloEditConfirm(editingCapitulo)}>
+                              <i className="fas fa-check"></i> Confirmar
+                            </button>
+                            <button className="btn-cancel" onClick={handleCapituloEditCancel}>
+                              <i className="fas fa-times"></i> Cancelar
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button className="btn-edit" onClick={() => handleCapituloEdit(capitulo)}>
+                              <i className="fas fa-edit"></i> Editar nombre
+                            </button>
+                            <button className="btn-delete" onClick={() => handleCapituloDelete(capitulo.id)}>
+                              <i className="fas fa-trash"></i> Eliminar
+                            </button>
+                          </>
+                        )}
+                      </div>
+                      {selectedCapitulo && selectedCapitulo.id === capitulo.id && (
+                        <div className="escena-list">
+                          <h5>Escenas:</h5>
+                          <button onClick={toggleEscenas} className="btn-toggle">
+                            {escenasExpanded ? 'Ocultar Escenas' : 'Mostrar Escenas'}
+                          </button>
+                          {escenasExpanded && (
+                            <ul>
+                              {selectedCapitulo.escenas &&
+                                selectedCapitulo.escenas.map((escena) => (
+                                  <li key={escena.id} className="escena-item">
+                                    <div className="escena-header">
+                                      <span>{escena.titulo_escena}</span>
+                                      <div className="escena-actions">
+                                        {selectedEscena && selectedEscena.id === escena.id ? (
+                                          <>
+                                            <button className="btn-cancel" onClick={() => setSelectedEscena(null)}>
+                                              <i className="fas fa-times"></i> Cancelar
+                                            </button>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <button className="btn-edit" onClick={() => handleEscenaEdit(escena)}>
+                                              <i className="fas fa-edit"></i> Editar
+                                            </button>
+                                            <button className="btn-delete" onClick={() => handleEscenaDelete(escena.id)}>
+                                              <i className="fas fa-trash"></i> Eliminar
+                                            </button>
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <EscenaDetails
+                                      escena={escena}
+                                      personajes={personajes}
+                                      locaciones={locaciones}
+                                    />
+                                  </li>
+                                ))}
+                            </ul>
+                          )}
+                          <button className="btn-create" onClick={toggleEscenaForm}>
+                            {showEscenaForm ? 'Cancelar' : 'Crear Nueva Escena'}
+                          </button>
+                          {showEscenaForm && (
+                            <EscenaForm
+                              capituloId={selectedCapitulo.id}
+                              escena={selectedEscena}
+                              personajes={personajes}
+                              locaciones={locaciones}
+                              onSubmit={handleEscenaSubmit}
+                            />
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+              </ul>
+            )}
+            <button className="btn-create" onClick={toggleCapituloForm}>
+              {showCapituloForm ? 'Cancelar' : 'Crear Nuevo Capítulo'}
+            </button>
+            {showCapituloForm && (
+              <CapituloForm proyectoId={selectedProyecto.id} capitulo={selectedCapitulo} onSubmit={handleCapituloSubmit} />
+            )}
+          </div>
           <div className="personaje-list">
             <h4>Personajes:</h4>
             <button className="btn-toggle" onClick={toggleShowPersonajes}>

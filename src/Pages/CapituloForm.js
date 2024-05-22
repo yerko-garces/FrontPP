@@ -19,7 +19,8 @@ function CapituloForm({ proyectoId, capitulo, onSubmit }) {
           onChange={(e) => setNombre(e.target.value)}
         />
       </div>
-      <button type="submit">{capitulo ? 'Actualizar Capítulo' : 'Crear Capítulo'}</button>
+      {}
+      <button type="submit">Crear Capítulo</button>
     </form>
   );
 }
