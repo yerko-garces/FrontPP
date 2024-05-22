@@ -1,6 +1,8 @@
 // EscenaForm.js
 import React, { useState, useEffect } from 'react';
 
+import '../Assets/Forms.css';
+
 function EscenaForm({ capituloId, escena, personajes, locaciones, items, onSubmit }) {
   const [tituloEscena, setTituloEscena] = useState(escena ? escena.titulo_escena : '');
   const [numeroEscena, setNumeroEscena] = useState(escena ? escena.numeroEscena : '');
@@ -57,7 +59,8 @@ function EscenaForm({ capituloId, escena, personajes, locaciones, items, onSubmi
   return (
     <form onSubmit={handleSubmit}>
       <div>
-        <label htmlFor="tituloEscena">Título de Escena:</label>
+        
+        <label htmlFor="tituloEscena">Numero Escena:</label>
         <input
           type="text"
           id="tituloEscena"
@@ -66,7 +69,7 @@ function EscenaForm({ capituloId, escena, personajes, locaciones, items, onSubmi
         />
       </div>
       <div>
-        <label htmlFor="numeroEscena">Número de Escena:</label>
+        <label htmlFor="numeroEscena">Take:</label> 
         <input
           type="text"
           id="numeroEscena"

@@ -6,6 +6,7 @@ import EscenaForm from './EscenaForm';
 import PersonajeForm from './PersonajeForm';
 import LocacionForm from './LocacionForm';
 import ItemForm from './ItemForm';
+import EscenaDetails from './EscenaDetails';
 import '../Assets/Dashboard.css';
 
 function Dashboard() {
@@ -31,6 +32,10 @@ function Dashboard() {
   const [editingCapitulo, setEditingCapitulo] = useState(null);
   const [editingPersonaje, setEditingPersonaje] = useState(null);
   const [editingLocacion, setEditingLocacion] = useState(null);
+  const [showPersonajes, setShowPersonajes] = useState(false);
+  const [showProyectoDetalle, setShowProyectoDetalle] = useState(false);
+  const [showProyectoDetails, setShowProyectoDetails] = useState(false); 
+  
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,6 +65,16 @@ function Dashboard() {
     fetchData();
   }, []);
 
+  const handleVerDetallesProyecto = (proyecto) => {
+    setSelectedProyecto(proyecto);
+    setShowProyectoDetails(true); // Mostrar los detalles del proyecto
+  };
+
+  const handleCloseProyectoDetails = () => {
+    setSelectedProyecto(null);
+    setShowProyectoDetails(false); // Ocultar los detalles del proyecto
+  };
+
   useEffect(() => {
     const fetchPersonajesAndLocaciones = async () => {
       try {
@@ -88,6 +103,10 @@ function Dashboard() {
     }
   }, [selectedProyecto]);
 
+  const toggleShowProyectoDetalle = () => {
+    setShowProyectoDetalle(!showProyectoDetalle);
+  };
+
   const handleProyectoSubmit = async (proyecto) => {
     try {
       const token = localStorage.getItem('token');
@@ -108,6 +127,18 @@ function Dashboard() {
       setSelectedProyecto(null);
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const toggleShowPersonajeForm = () => {
+    setShowPersonajeForm(!showPersonajeForm);
+  };
+
+  const toggleShowPersonajes = () => {
+    setShowPersonajes(!showPersonajes);
+    // Si la lista de personajes se está cerrando, también cerrar el formulario
+    if (!showPersonajes && showPersonajeForm) {
+      setShowPersonajeForm(false);
     }
   };
 
@@ -433,18 +464,13 @@ function Dashboard() {
     fetchEscenas(capitulo.id);
   };
 
-  const handleCloseProyectoDetails = () => {
-    setSelectedProyecto(null);
-    setSelectedCapitulo(null);
-    setSelectedEscena(null);
-  };
-
   if (loading) {
     return <div>Cargando...</div>;
   }
 
   return (
     <div className="dashboard-container">
+    {!showProyectoDetails && (
       <div className="proyecto-list">
         <h2>Proyectos</h2>
         <ul>
@@ -479,7 +505,7 @@ function Dashboard() {
                     <button className="btn-delete" onClick={() => handleProyectoDelete(proyecto.id)}>
                       <i className="fas fa-trash"></i> Eliminar
                     </button>
-                    <button className="btn-view" onClick={() => setSelectedProyecto(proyecto)}>
+                    <button className="btn-view" onClick={() => handleVerDetallesProyecto(proyecto)}>
                       <i className="fas fa-info-circle"></i> Ver detalles
                     </button>
                   </>
@@ -497,6 +523,7 @@ function Dashboard() {
           />
         )}
       </div>
+    )}
       <div className={`inventario-container ${showInventario ? 'visible' : ''}`}>
         <button className="inventario-toggle" onClick={() => setShowInventario(!showInventario)}>
           <i className="fas fa-boxes"></i> Inventario
@@ -594,61 +621,52 @@ function Dashboard() {
           </div>
           <h3>Proyecto: {selectedProyecto.titulo}</h3>
           <div className="capitulo-list">
-            <h4>Capítulos:</h4>
-            <ul>
-              {selectedProyecto.capitulos &&
-                selectedProyecto.capitulos.map((capitulo) => (
-                  <li key={capitulo.id} className="capitulo-item">
-                    {editingCapitulo && editingCapitulo.id === capitulo.id ? (
-                      <input
-                        type="text"
-                        value={editingCapitulo.nombre_capitulo}
-                        onChange={(e) =>
-                          setEditingCapitulo({ ...editingCapitulo, nombre_capitulo: e.target.value })
-                        }
-                      />
-                    ) : (
-                      <span>{capitulo.nombre_capitulo}</span>
-                    )}
-                    <div className="capitulo-actions">
-                      {editingCapitulo && editingCapitulo.id === capitulo.id ? (
-                        <>
-                          <button className="btn-confirm" onClick={() => handleCapituloEditConfirm(editingCapitulo)}>
-                            <i className="fas fa-check"></i> Confirmar
-                          </button>
-                          <button className="btn-cancel" onClick={handleCapituloEditCancel}>
-                            <i className="fas fa-times"></i> Cancelar
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button className="btn-edit" onClick={() => handleCapituloEdit(capitulo)}>
-                            <i className="fas fa-edit"></i> Editar
-                          </button>
-                          <button className="btn-delete" onClick={() => handleCapituloDelete(capitulo.id)}>
-                            <i className="fas fa-trash"></i> Eliminar
-                          </button>
-                          <button className="btn-view" onClick={() => handleCapituloClick(capitulo)}>
-                            <i className="fas fa-chevron-right"></i> Ver detalles
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </li>
-                ))}
-            </ul>
-            <button className="btn-create" onClick={() => setShowCapituloForm(true)}>Crear Nuevo Capítulo</button>
-            {showCapituloForm && (
-              <CapituloForm
-                proyectoId={selectedProyecto.id}
-                capitulo={selectedCapitulo}
-                onSubmit={handleCapituloSubmit}
+  <h4>Capítulos:</h4>
+  <ul>
+    {selectedProyecto.capitulos &&
+      selectedProyecto.capitulos.map((capitulo) => (
+        <li key={capitulo.id} className="capitulo-item">
+          <button
+            onClick={() => handleCapituloClick(capitulo)}
+            style={{
+              backgroundColor: selectedCapitulo && selectedCapitulo.id === capitulo.id ? '#007bff' : '#f0f0f0',
+              color: selectedCapitulo && selectedCapitulo.id === capitulo.id ? '#fff' : '#333',
+            }}
+          >
+            {editingCapitulo && editingCapitulo.id === capitulo.id ? (
+              <input
+                type="text"
+                value={editingCapitulo.nombre_capitulo}
+                onChange={(e) => setEditingCapitulo({ ...editingCapitulo, nombre_capitulo: e.target.value })}
               />
+            ) : (
+              <span>{capitulo.nombre_capitulo}</span>
+            )}
+          </button>
+          <div className="capitulo-actions">
+            {editingCapitulo && editingCapitulo.id === capitulo.id ? (
+              <>
+                <button className="btn-confirm" onClick={() => handleCapituloEditConfirm(editingCapitulo)}>
+                  <i className="fas fa-check"></i> Confirmar
+                </button>
+                <button className="btn-cancel" onClick={handleCapituloEditCancel}>
+                  <i className="fas fa-times"></i> Cancelar
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="btn-edit" onClick={() => handleCapituloEdit(capitulo)}>
+                  <i className="fas fa-edit"></i> Editar
+                </button>
+                <button className="btn-delete" onClick={() => handleCapituloDelete(capitulo.id)}>
+                  <i className="fas fa-trash"></i> Eliminar
+                </button>
+              </>
             )}
           </div>
-          {selectedCapitulo && (
+          {selectedCapitulo && selectedCapitulo.id === capitulo.id && (
             <div className="escena-list">
-              <h4>Escenas del Capítulo: {selectedCapitulo.nombre_capitulo}</h4>
+              <h5>Escenas:</h5>
               <ul>
                 {selectedCapitulo.escenas &&
                   selectedCapitulo.escenas.map((escena) => (
@@ -674,16 +692,18 @@ function Dashboard() {
                           )}
                         </div>
                       </div>
-                      {selectedEscena && selectedEscena.id === escena.id && (
-                        <div className="escena-details">
-                          <p>Descripción: {escena.descripcion}</p>
-                          <p>Duración: {escena.duracion} minutos</p>
-                        </div>
-                      )}
+                      <EscenaDetails
+                        escena={escena}
+                        personajes={personajes}
+                        locaciones={locaciones}
+                        items={bodega}
+                      />
                     </li>
                   ))}
               </ul>
-              <button className="btn-create" onClick={() => setShowEscenaForm(true)}>Crear Nueva Escena</button>
+              <button className="btn-create" onClick={() => setShowEscenaForm(true)}>
+                Crear Nueva Escena
+              </button>
               {showEscenaForm && (
                 <EscenaForm
                   capituloId={selectedCapitulo.id}
@@ -696,8 +716,22 @@ function Dashboard() {
               )}
             </div>
           )}
+        </li>
+      ))}
+  </ul>
+  <button className="btn-create" onClick={() => setShowCapituloForm(true)}>
+    Crear Nuevo Capítulo
+  </button>
+  {showCapituloForm && (
+    <CapituloForm proyectoId={selectedProyecto.id} capitulo={selectedCapitulo} onSubmit={handleCapituloSubmit} />
+  )}
+</div>
           <div className="personaje-list">
-            <h4>Personajes:</h4>
+          <h4>Personajes:</h4>
+          <button className="btn-toggle" onClick={toggleShowPersonajes}>
+            {showPersonajes ? 'Ocultar Personajes' : 'Mostrar Personajes'}
+          </button>
+          {showPersonajes && (
             <ul>
               {personajes.map((personaje) => (
                 <li key={personaje.id} className="personaje-item">
@@ -737,14 +771,17 @@ function Dashboard() {
                 </li>
               ))}
             </ul>
-            <button className="btn-create" onClick={() => setShowPersonajeForm(true)}>Crear Personaje</button>
-            {showPersonajeForm && (
-              <PersonajeForm
-                proyectoId={selectedProyecto.id}
-                onSubmit={handlePersonajeSubmit}
-              />
-            )}
-          </div>
+          )}
+          <button className="btn-create" onClick={toggleShowPersonajeForm}>
+            {showPersonajeForm ? 'Cancelar' : 'Agregar Personajes'}
+          </button>
+          {showPersonajeForm && (
+            <PersonajeForm
+              proyectoId={selectedProyecto.id}
+              onSubmit={handlePersonajeSubmit}
+            />
+          )}
+        </div>
           <div className="locacion-list">
             <h4>Locaciones:</h4>
             <ul>
@@ -791,6 +828,7 @@ function Dashboard() {
               <LocacionForm
                 proyectoId={selectedProyecto.id}
                 onSubmit={handleLocacionSubmit}
+                onCancel={() => setShowLocacionForm(false)}
               />
             )}
           </div>
@@ -798,6 +836,7 @@ function Dashboard() {
       )}
     </div>
   );
-}
+};
 
 export default Dashboard;
+
