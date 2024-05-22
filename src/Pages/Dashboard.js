@@ -36,6 +36,8 @@ function Dashboard() {
   const [showProyectoDetalle, setShowProyectoDetalle] = useState(false);
   const [showProyectoDetails, setShowProyectoDetails] = useState(false);
   const [showLocaciones, setShowLocaciones] = useState(false);
+  const [capitulosExpanded, setCapitulosExpanded] = useState(false);
+  const [escenasExpanded, setEscenasExpanded] = useState(false);
 
 
   useEffect(() => {
@@ -108,6 +110,14 @@ function Dashboard() {
     setShowProyectoDetalle(!showProyectoDetalle);
   };
 
+  const toggleCapitulos = () => {
+    setCapitulosExpanded(!capitulosExpanded);
+  };
+  
+  const toggleEscenas = () => {
+    setEscenasExpanded(!escenasExpanded);
+  };
+
   const handleProyectoSubmit = async (proyecto) => {
     try {
       const token = localStorage.getItem('token');
@@ -178,9 +188,9 @@ function Dashboard() {
         });
         setSelectedProyecto((prevProyecto) => ({
           ...prevProyecto,
-          capitulos: prevProyecto.capitulos.map((c) =>
+          capitulos: prevProyecto.capitulos ? prevProyecto.capitulos.map((c) =>
             c.id === selectedCapitulo.id ? response.data : c
-          ),
+          ) : [], // Provide default empty array if null or undefined
         }));
       } else {
         const response = await axios.post(`http://localhost:8080/api/capitulos/${selectedProyecto.id}`, capitulo, {
@@ -188,7 +198,7 @@ function Dashboard() {
         });
         setSelectedProyecto((prevProyecto) => ({
           ...prevProyecto,
-          capitulos: [...prevProyecto.capitulos, response.data],
+          capitulos: prevProyecto.capitulos ? [...prevProyecto.capitulos, response.data] : [response.data], // Provide default empty array if null or undefined
         }));
       }
       setShowCapituloForm(false);
@@ -197,6 +207,7 @@ function Dashboard() {
       console.error(error);
     }
   };
+  
 
   const handleCapituloEdit = (capitulo) => {
     setEditingCapitulo(capitulo);
@@ -625,119 +636,129 @@ function Dashboard() {
         )}
       </div>
       {selectedProyecto && (
-        <div className="proyecto-details">
-          <div className="close-details-button">
-            <button onClick={handleCloseProyectoDetails}>
-              <i className="fas fa-times"></i> Cerrar
-            </button>
-          </div>
-          <h1 style={{ textAlign: 'center' }}>Proyecto: {selectedProyecto.titulo}</h1>
-          <div className="capitulo-list">
-            <h4>Capítulos:</h4>
-            <ul>
-              {selectedProyecto.capitulos &&
-                selectedProyecto.capitulos.map((capitulo) => (
-                  <li key={capitulo.id} className="capitulo-item">
-                    <button
-                      onClick={() => handleCapituloClick(capitulo)}
-                      style={{
-                        backgroundColor: selectedCapitulo && selectedCapitulo.id === capitulo.id ? '#007bff' : '#f0f0f0',
-                        color: selectedCapitulo && selectedCapitulo.id === capitulo.id ? '#fff' : '#333',
-                      }}
-                    >
-                      {editingCapitulo && editingCapitulo.id === capitulo.id ? (
-                        <input
-                          type="text"
-                          value={editingCapitulo.nombre_capitulo}
-                          onChange={(e) => setEditingCapitulo({ ...editingCapitulo, nombre_capitulo: e.target.value })}
-                        />
-                      ) : (
-                        <span>{capitulo.nombre_capitulo}</span>
-                      )}
+  <div className="proyecto-details">
+    <div className="close-details-button">
+      <button onClick={handleCloseProyectoDetails}>
+        <i className="fas fa-times"></i> Cerrar
+      </button>
+    </div>
+    <h1 style={{ textAlign: 'center' }}>Proyecto: {selectedProyecto.titulo}</h1>
+    <div className="capitulo-list">
+      <h4>Capítulos:</h4>
+      <button onClick={toggleCapitulos} className="btn-toggle">
+        {capitulosExpanded ? 'Ocultar Capítulos' : 'Mostrar Capítulos'}
+      </button>
+      {capitulosExpanded && (
+        <ul>
+          {selectedProyecto.capitulos &&
+            selectedProyecto.capitulos.map((capitulo) => (
+              <li key={capitulo.id} className="capitulo-item">
+                <button
+                  onClick={() => handleCapituloClick(capitulo)}
+                  style={{
+                    backgroundColor: selectedCapitulo && selectedCapitulo.id === capitulo.id ? '#007bff' : '#f0f0f0',
+                    color: selectedCapitulo && selectedCapitulo.id === capitulo.id ? '#fff' : '#333',
+                  }}
+                >
+                  {editingCapitulo && editingCapitulo.id === capitulo.id ? (
+                    <input
+                      type="text"
+                      value={editingCapitulo.nombre_capitulo}
+                      onChange={(e) => setEditingCapitulo({ ...editingCapitulo, nombre_capitulo: e.target.value })}
+                    />
+                  ) : (
+                    <span>{capitulo.nombre_capitulo}</span>
+                  )}
+                </button>
+                <div className="capitulo-actions">
+                  {editingCapitulo && editingCapitulo.id === capitulo.id ? (
+                    <>
+                      <button className="btn-confirm" onClick={() => handleCapituloEditConfirm(editingCapitulo)}>
+                        <i className="fas fa-check"></i> Confirmar
+                      </button>
+                      <button className="btn-cancel" onClick={handleCapituloEditCancel}>
+                        <i className="fas fa-times"></i> Cancelar
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="btn-edit" onClick={() => handleCapituloEdit(capitulo)}>
+                        <i className="fas fa-edit"></i> Editar
+                      </button>
+                      <button className="btn-delete" onClick={() => handleCapituloDelete(capitulo.id)}>
+                        <i className="fas fa-trash"></i> Eliminar
+                      </button>
+                    </>
+                  )}
+                </div>
+                {selectedCapitulo && selectedCapitulo.id === capitulo.id && (
+                  <div className="escena-list">
+                    <h5>Escenas:</h5>
+                    <button onClick={toggleEscenas} className="btn-toggle">
+                      {escenasExpanded ? 'Ocultar Escenas' : 'Mostrar Escenas'}
                     </button>
-                    <div className="capitulo-actions">
-                      {editingCapitulo && editingCapitulo.id === capitulo.id ? (
-                        <>
-                          <button className="btn-confirm" onClick={() => handleCapituloEditConfirm(editingCapitulo)}>
-                            <i className="fas fa-check"></i> Confirmar
-                          </button>
-                          <button className="btn-cancel" onClick={handleCapituloEditCancel}>
-                            <i className="fas fa-times"></i> Cancelar
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button className="btn-edit" onClick={() => handleCapituloEdit(capitulo)}>
-                            <i className="fas fa-edit"></i> Editar
-                          </button>
-                          <button className="btn-delete" onClick={() => handleCapituloDelete(capitulo.id)}>
-                            <i className="fas fa-trash"></i> Eliminar
-                          </button>
-                        </>
-                      )}
-                    </div>
-                    {selectedCapitulo && selectedCapitulo.id === capitulo.id && (
-                      <div className="escena-list">
-                        <h5>Escenas:</h5>
-                        <ul>
-                          {selectedCapitulo.escenas &&
-                            selectedCapitulo.escenas.map((escena) => (
-                              <li key={escena.id} className="escena-item">
-                                <div className="escena-header">
-                                  <span>{escena.titulo_escena}</span>
-                                  <div className="escena-actions">
-                                    {selectedEscena && selectedEscena.id === escena.id ? (
-                                      <>
-                                        <button className="btn-cancel" onClick={() => setSelectedEscena(null)}>
-                                          <i className="fas fa-times"></i> Cancelar
-                                        </button>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <button className="btn-edit" onClick={() => handleEscenaEdit(escena)}>
-                                          <i className="fas fa-edit"></i> Editar
-                                        </button>
-                                        <button className="btn-delete" onClick={() => handleEscenaDelete(escena.id)}>
-                                          <i className="fas fa-trash"></i> Eliminar
-                                        </button>
-                                      </>
-                                    )}
-                                  </div>
+                    {escenasExpanded && (
+                      <ul>
+                        {selectedCapitulo.escenas &&
+                          selectedCapitulo.escenas.map((escena) => (
+                            <li key={escena.id} className="escena-item">
+                              <div className="escena-header">
+                                <span>{escena.titulo_escena}</span>
+                                <div className="escena-actions">
+                                  {selectedEscena && selectedEscena.id === escena.id ? (
+                                    <>
+                                      <button className="btn-cancel" onClick={() => setSelectedEscena(null)}>
+                                        <i className="fas fa-times"></i> Cancelar
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <button className="btn-edit" onClick={() => handleEscenaEdit(escena)}>
+                                        <i className="fas fa-edit"></i> Editar
+                                      </button>
+                                      <button className="btn-delete" onClick={() => handleEscenaDelete(escena.id)}>
+                                        <i className="fas fa-trash"></i> Eliminar
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
-                                <EscenaDetails
-                                  escena={escena}
-                                  personajes={personajes}
-                                  locaciones={locaciones}
-                                  items={bodega}
-                                />
-                              </li>
-                            ))}
-                        </ul>
-                        <button className="btn-create" onClick={() => setShowEscenaForm(true)}>
-                          Crear Nueva Escena
-                        </button>
-                        {showEscenaForm && (
-                          <EscenaForm
-                            capituloId={selectedCapitulo.id}
-                            escena={selectedEscena}
-                            personajes={personajes}
-                            locaciones={locaciones}
-                            items={bodega}
-                            onSubmit={handleEscenaSubmit}
-                          />
-                        )}
-                      </div>
+                              </div>
+                              <EscenaDetails
+                                escena={escena}
+                                personajes={personajes}
+                                locaciones={locaciones}
+                                items={bodega}
+                              />
+                            </li>
+                          ))}
+                      </ul>
                     )}
-                  </li>
-                ))}
-            </ul>
-            <button className="btn-create" onClick={() => setShowCapituloForm(true)}>
-              Crear Nuevo Capítulo
-            </button>
-            {showCapituloForm && (
-              <CapituloForm proyectoId={selectedProyecto.id} capitulo={selectedCapitulo} onSubmit={handleCapituloSubmit} />
-            )}
-          </div>
+                    <button className="btn-create" onClick={() => setShowEscenaForm(true)}>
+                      Crear Nueva Escena
+                    </button>
+                    {showEscenaForm && (
+                      <EscenaForm
+                        capituloId={selectedCapitulo.id}
+                        escena={selectedEscena}
+                        personajes={personajes}
+                        locaciones={locaciones}
+                        items={bodega}
+                        onSubmit={handleEscenaSubmit}
+                      />
+                    )}
+                  </div>
+                )}
+              </li>
+            ))}
+        </ul>
+      )}
+      <button className="btn-create" onClick={() => setShowCapituloForm(true)}>
+        Crear Nuevo Capítulo
+      </button>
+      {showCapituloForm && (
+        <CapituloForm proyectoId={selectedProyecto.id} capitulo={selectedCapitulo} onSubmit={handleCapituloSubmit} />
+      )}
+    </div>
           <div className="personaje-list">
             <h4>Personajes:</h4>
             <button className="btn-toggle" onClick={toggleShowPersonajes}>
