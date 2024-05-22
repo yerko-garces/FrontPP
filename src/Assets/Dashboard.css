@@ -71,7 +71,7 @@
 }
 
 .inventario-container.visible {
-  width: 500px;
+  width: 800px; /* Incrementado para que se extienda más */
 }
 
 .inventario-toggle {
@@ -332,5 +332,3 @@
 .personaje-list {
   margin-bottom: 20px;
 }
-
-
