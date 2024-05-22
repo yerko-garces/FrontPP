@@ -16,7 +16,6 @@ function LocacionForm({ proyectoId, onSubmit }) {
       };
       await onSubmit(locacion);
       setNombre('');
-      setDescripcion('');
     } catch (error) {
       console.error(error);
       // Manejar el error, mostrar mensaje al usuario

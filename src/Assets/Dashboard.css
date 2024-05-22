@@ -264,12 +264,12 @@
 }
 
 .btn-delete {
-  background-color: #dc3545;
-  color: #ffffff;
+  background-color: #dc3545 !important;
+  color: #ffffff !important;
 }
 
 .btn-delete:hover {
-  background-color: #c82333;
+  background-color: #c82333 !important;
 }
 
 .btn-view {
@@ -316,3 +316,20 @@
   color: #666;
   margin-top: 5px;
 }
+
+.personaje-list,
+.proyecto-list,
+.locacion-list {
+  padding: 20px;
+  margin-top: 20px;
+  background-color: #f1f1f1; /* Cambiado a un color más oscuro */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  border: 2px solid #000000; /* Agregado un borde negro */
+}
+
+.personaje-list {
+  margin-bottom: 20px;
+}
+
+
