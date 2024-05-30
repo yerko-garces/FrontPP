@@ -1,53 +1,84 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import '../Assets/PlanDeRodaje.css';
 
-const PlanDeRodaje = ({ proyecto = {}, escenas = [], inventario = [], onClose }) => {
-    const { projectId } = useParams();
-    const [filtro, setFiltro] = useState('');
-    const [diasDeRodaje, setDiasDeRodaje] = useState({});
-  
-    const handleFiltroChange = (e) => {
-      setFiltro(e.target.value);
+const PlanDeRodaje = ({ onClose }) => {
+  const { projectId } = useParams();
+  const [filtro, setFiltro] = useState('');
+  const [diasDeRodaje, setDiasDeRodaje] = useState({});
+  const [escenas, setEscenas] = useState([]);
+  const [inventario, setInventario] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const escenasResponse = await axios.get(`http://localhost:8080/api/escenas/proyecto/${projectId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setEscenas(escenasResponse.data);
+
+        const inventarioResponse = await axios.get(`http://localhost:8080/api/items/bodega/${projectId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setInventario(inventarioResponse.data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
     };
-  
-    const handleAgregarEscena = (escena, dia) => {
-      setDiasDeRodaje((prevDias) => ({
-        ...prevDias,
-        [dia]: [...(prevDias[dia] || []), escena],
-      }));
-    };
-  
-    const handleAgregarInventario = (item, dia) => {
-      setDiasDeRodaje((prevDias) => ({
-        ...prevDias,
-        [dia]: {
-          ...prevDias[dia],
-          inventario: [...(prevDias[dia]?.inventario || []), item],
-        },
-      }));
-    };
-  
-    const handleEliminarEscena = (escena, dia) => {
-      setDiasDeRodaje((prevDias) => ({
-        ...prevDias,
-        [dia]: prevDias[dia].filter((e) => e !== escena),
-      }));
-    };
-  
-    const handleEliminarInventario = (item, dia) => {
-      setDiasDeRodaje((prevDias) => ({
-        ...prevDias,
-        [dia]: {
-          ...prevDias[dia],
-          inventario: prevDias[dia].inventario.filter((i) => i !== item),
-        },
-      }));
-    };
-  
-    const escenasFiltradas = escenas.filter((escena) =>
-      escena.titulo_escena.toLowerCase().includes(filtro.toLowerCase())
-    );
+
+    fetchData();
+  }, [projectId]);
+
+  const handleFiltroChange = (e) => {
+    setFiltro(e.target.value);
+  };
+
+  const handleAgregarEscena = (escena, dia) => {
+    setDiasDeRodaje((prevDias) => ({
+      ...prevDias,
+      [dia]: [...(prevDias[dia] || []), escena],
+    }));
+  };
+
+  const handleAgregarInventario = (item, dia) => {
+    setDiasDeRodaje((prevDias) => ({
+      ...prevDias,
+      [dia]: {
+        ...prevDias[dia],
+        inventario: [...(prevDias[dia]?.inventario || []), item],
+      },
+    }));
+  };
+
+  const handleEliminarEscena = (escena, dia) => {
+    setDiasDeRodaje((prevDias) => ({
+      ...prevDias,
+      [dia]: prevDias[dia].filter((e) => e !== escena),
+    }));
+  };
+
+  const handleEliminarInventario = (item, dia) => {
+    setDiasDeRodaje((prevDias) => ({
+      ...prevDias,
+      [dia]: {
+        ...prevDias[dia],
+        inventario: prevDias[dia].inventario.filter((i) => i !== item),
+      },
+    }));
+  };
+
+  const escenasFiltradas = escenas.filter((escena) =>
+    escena.titulo_escena.toLowerCase().includes(filtro.toLowerCase())
+  );
+
+  if (loading) {
+    return <div>Cargando...</div>;
+  }
   
     return (
       <div className="plan-de-rodaje">
@@ -153,4 +184,4 @@ const PlanDeRodaje = ({ proyecto = {}, escenas = [], inventario = [], onClose })
     );
   };
   
-  export default PlanDeRodaje;
+  export default PlanDeRodaje; 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../Assets/EscenaDetails.css';
 
-function EscenaDetails({ escena, personajes, locaciones, items }) {
+function EscenaDetails({ escena, personajes, locaciones}) {
     return (
       <div className="escena-details">
         <div className="detail-box">
@@ -28,14 +28,7 @@ function EscenaDetails({ escena, personajes, locaciones, items }) {
           <h5>Locación</h5>
           <p>{escena.locacion ? escena.locacion.nombre : 'N/A'}</p>
         </div>
-        <div className="detail-box">
-          <h5>Items</h5>
-          <ul>
-            {escena.items.map((item) => (
-              <li key={item.id}>{item.nombre}</li>
-            ))}
-          </ul>
-        </div>
+        
       </div>
     );
   }

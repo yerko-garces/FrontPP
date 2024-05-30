@@ -11,7 +11,7 @@ function EscenaForm({ capituloId, escena, personajes, locaciones, items, onSubmi
   const [resumen, setResumen] = useState(escena ? escena.resumen : '');
   const [selectedPersonajes, setSelectedPersonajes] = useState(escena ? escena.personajes.map(p => p.id) : []);
   const [selectedLocacion, setSelectedLocacion] = useState(escena ? (escena.locacion ? escena.locacion.id : null) : null);
-  const [selectedItems, setSelectedItems] = useState(escena ? escena.items.map(i => i.id) : []);
+
 
   useEffect(() => {
     if (escena) {
@@ -22,7 +22,7 @@ function EscenaForm({ capituloId, escena, personajes, locaciones, items, onSubmi
       setResumen(escena.resumen);
       setSelectedPersonajes(escena.personajes.map(p => p.id));
       setSelectedLocacion(escena.locacion ? escena.locacion.id : null);
-      setSelectedItems(escena.items.map(i => i.id));
+      
     }
   }, [escena]);
 
@@ -36,7 +36,7 @@ function EscenaForm({ capituloId, escena, personajes, locaciones, items, onSubmi
       resumen,
       personajes: selectedPersonajes,
       locacion: selectedLocacion,
-      items: selectedItems,
+      
     });
   };
 
@@ -48,13 +48,7 @@ function EscenaForm({ capituloId, escena, personajes, locaciones, items, onSubmi
     }
   };
 
-  const handleItemChange = (itemId) => {
-    if (selectedItems.includes(itemId)) {
-      setSelectedItems(selectedItems.filter(id => id !== itemId));
-    } else {
-      setSelectedItems([...selectedItems, itemId]);
-    }
-  };
+  
 
   return (
     <form onSubmit={handleSubmit}>
@@ -130,20 +124,7 @@ function EscenaForm({ capituloId, escena, personajes, locaciones, items, onSubmi
           ))}
         </select>
       </div>
-      <div>
-        <label>Items:</label>
-        {Array.isArray(items) && items.map(item => (
-          <div key={item.id}>
-            <input
-              type="checkbox"
-              value={item.id}
-              checked={selectedItems.includes(item.id)}
-              onChange={() => handleItemChange(item.id)}
-            />
-            <label>{item.nombre}</label>
-          </div>
-        ))}
-      </div>
+    
       <button type="submit">{escena ? 'Actualizar Escena' : 'Crear Escena'}</button>
     </form>
   );
