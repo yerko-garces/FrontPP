@@ -1,7 +1,13 @@
+
+.plan-de-rodaje {
+  margin-top: 50px; /* Ajusta esta distancia según sea necesario */
+}
+
 .escenas-asignadas,
 .inventario-asignado {
   margin-top: 10px;
 }
+
 
 .escenas-asignadas ul,
 .inventario-asignado ul {
@@ -49,4 +55,14 @@
 
 .escena-asignada.no-especificada span {
   color: #9e9e9e;
+}
+
+.plan-de-rodaje-header {
+  text-align: center;
+}
+
+.btn-dashboard-container {
+  position: absolute;
+  top: 20px; /* Ajusta esta distancia según sea necesario */
+  left: 20px; /* Ajusta esta distancia según sea necesario */
 }

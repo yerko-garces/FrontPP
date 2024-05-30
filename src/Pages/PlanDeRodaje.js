@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom'; // Importa Link
 import '../Assets/PlanDeRodaje.css';
 
 // Función de búsqueda reutilizable
@@ -89,14 +89,20 @@ const PlanDeRodaje = ({ onClose }) => {
   return (
     <div className="plan-de-rodaje">
       <div className="plan-de-rodaje-header">
-        <h2>Plan de Rodaje</h2>
+        <div className="btn-dashboard-container">
+          <Link to="/dashboard">
+            <button className="btn-dashboard">
+              <i className="fas fa-film"></i> Volver a proyectos
+            </button></Link> { }
+        </div>
+
+        <h1>Plan de Rodaje</h1>
         <input
           type="text"
           placeholder="Filtrar escenas por título"
           value={filtro}
           onChange={handleFiltroChange}
         />
-        <button onClick={onClose}>Cerrar</button>
       </div>
 
       <div className="plan-de-rodaje-body">
@@ -110,11 +116,10 @@ const PlanDeRodaje = ({ onClose }) => {
                   {Object.keys(diasDeRodaje).map((dia) => (
                     <button
                       key={dia}
-                      className={`dia-btn ${
-                        diasDeRodaje[dia]?.some((e) => e.id === escena.id)
-                          ? 'asignada'
-                          : ''
-                      }`}
+                      className={`dia-btn ${diasDeRodaje[dia]?.some((e) => e.id === escena.id)
+                        ? 'asignada'
+                        : ''
+                        }`}
                       onClick={() => handleAgregarEscena(escena, dia)}
                     >
                       {dia}
@@ -125,43 +130,43 @@ const PlanDeRodaje = ({ onClose }) => {
             ))}
           </ul>
         </div>
-  
-          <div className="dias-de-rodaje">
-            {Object.keys(diasDeRodaje).map((dia) => (
-              <div key={dia} className="dia-de-rodaje">
-                <h4>{dia}</h4>
-                <div className="escenas-asignadas">
-                  <h5>Escenas:</h5>
-                  <ul>
-                    {diasDeRodaje[dia].map((escena) => (
-                      <li key={escena.id} className="escena-asignada">
-                        <span>{escena.titulo_escena}</span>
-                        <button onClick={() => handleEliminarEscena(escena, dia)}>
-                          Eliminar
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="inventario-asignado">
-                  <h5>Inventario:</h5>
-                  <ul>
-                    {diasDeRodaje[dia]?.inventario?.map((item) => (
-                      <li key={item.id} className="item-asignado">
-                        <span>{item.nombre}</span>
-                        <button onClick={() => handleEliminarInventario(item, dia)}>
-                          Eliminar
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+
+        <div className="dias-de-rodaje">
+          {Object.keys(diasDeRodaje).map((dia) => (
+            <div key={dia} className="dia-de-rodaje">
+              <h4>{dia}</h4>
+              <div className="escenas-asignadas">
+                <h5>Escenas:</h5>
+                <ul>
+                  {diasDeRodaje[dia].map((escena) => (
+                    <li key={escena.id} className="escena-asignada">
+                      <span>{escena.titulo_escena}</span>
+                      <button onClick={() => handleEliminarEscena(escena, dia)}>
+                        Eliminar
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            ))}
-          </div>
+              <div className="inventario-asignado">
+                <h5>Inventario:</h5>
+                <ul>
+                  {diasDeRodaje[dia]?.inventario?.map((item) => (
+                    <li key={item.id} className="item-asignado">
+                      <span>{item.nombre}</span>
+                      <button onClick={() => handleEliminarInventario(item, dia)}>
+                        Eliminar
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-    );
-  };
-  
-  export default PlanDeRodaje; 
+    </div>
+  );
+};
+
+export default PlanDeRodaje; 
