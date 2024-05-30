@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import ProyectoForm from './ProyectoForm';
 import CapituloForm from './CapituloForm';
@@ -7,6 +8,7 @@ import PersonajeForm from './PersonajeForm';
 import LocacionForm from './LocacionForm';
 import ItemForm from './ItemForm';
 import EscenaDetails from './EscenaDetails';
+import PlanDeRodaje from './PlanDeRodaje';
 import '../Assets/Dashboard.css';
 
 function Dashboard() {
@@ -38,7 +40,9 @@ function Dashboard() {
   const [showLocaciones, setShowLocaciones] = useState(false);
   const [capitulosExpanded, setCapitulosExpanded] = useState(false);
   const [escenasExpanded, setEscenasExpanded] = useState(false);
-
+  const [showPlanDeRodaje, setShowPlanDeRodaje] = useState(false);
+  const [escenasExpandidas, setEscenasExpandidas] = useState({});
+  
 
 
 
@@ -72,12 +76,22 @@ function Dashboard() {
 
   const handleVerDetallesProyecto = (proyecto) => {
     setSelectedProyecto(proyecto);
-    setShowProyectoDetails(true); // Mostrar los detalles del proyecto
+    setShowProyectoDetalle(true); // Mostrar los detalles del proyecto
   };
 
   const handleCloseProyectoDetails = () => {
     setSelectedProyecto(null);
-    setShowProyectoDetails(false); // Ocultar los detalles del proyecto
+    setShowProyectoDetalle(false); // Ocultar los detalles del proyecto
+  };
+
+  const handleMostrarPlanDeRodaje = (proyecto) => {
+    setSelectedProyecto(proyecto);
+    setShowPlanDeRodaje(true); // Mostrar el Plan de Rodaje
+  };
+
+  const handleClosePlanDeRodaje = () => {
+    setSelectedProyecto(null);
+    setShowPlanDeRodaje(false); // Ocultar el Plan de Rodaje
   };
 
   useEffect(() => {
@@ -177,7 +191,9 @@ function Dashboard() {
     setEditingProyecto(null);
   };
 
-  const handleProyectoDelete = async (proyectoId) => {
+  const handleProyectoDelete = async (proyectoId, proyectoTitulo) => {
+  const confirmacion = window.confirm(`¿Estás seguro de eliminar el proyecto "${proyectoTitulo}"?`);
+  if (confirmacion) {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(`http://localhost:8080/api/proyectos/${proyectoId}`, {
@@ -187,7 +203,8 @@ function Dashboard() {
     } catch (error) {
       console.error(error);
     }
-  };
+  }
+};
 
   const handleCapituloSubmit = async (capitulo) => {
     try {
@@ -482,8 +499,12 @@ function Dashboard() {
   };
 
   const handleCapituloClick = (capitulo) => {
-    setSelectedCapitulo(capitulo);
-    fetchEscenas(capitulo.id);
+  setSelectedCapitulo(capitulo);
+  setEscenasExpandidas((prevState) => ({
+    ...prevState,
+    [capitulo.id]: !prevState[capitulo.id],
+  }));
+  fetchEscenas(capitulo.id);
   };
 
   const toggleShowLocaciones = () => {
@@ -503,24 +524,19 @@ function Dashboard() {
 
   return (
     <div className="dashboard-container">
-      {!showProyectoDetails && (
+      {!showProyectoDetails && !showPlanDeRodaje && (
         <div className="proyecto-list">
           <h1 style={{ textAlign: 'center' }}>Mis Proyectos</h1>
           <ul>
             {proyectos.map((proyecto) => (
-              <li key={proyecto.id} className="proyecto-item">
-                {editingProyecto && editingProyecto.id === proyecto.id ? (
-                  <input
-                    type="text"
-                    value={editingProyecto.titulo}
-                    onChange={(e) =>
-                      setEditingProyecto({ ...editingProyecto, titulo: e.target.value })
-                    }
-                  />
-                ) : (
-                  <span>{proyecto.titulo}</span>
-                )}
-                <div className="proyecto-actions">
+              <li key={proyecto.id} className="proyecto-item" onClick={() => handleVerDetallesProyecto(proyecto)}>
+              <span>{proyecto.titulo}</span>
+              <div className="proyecto-actions">
+              <Link to={`/plan-de-rodaje/${proyecto.id}`}>
+  <button className="btn-plan-rodaje">
+    <i className="fas fa-film"></i> Plan de Rodaje
+  </button>
+</Link>
                   {editingProyecto && editingProyecto.id === proyecto.id ? (
                     <>
                       <div className="button-container">
@@ -534,9 +550,6 @@ function Dashboard() {
                     </>
                   ) : (
                     <>
-                      <button className="btn-view" onClick={() => handleVerDetallesProyecto(proyecto)}>
-                        <i className="fas fa-info-circle"></i> Ver detalles
-                      </button>
                       <button className="btn-edit" onClick={() => handleProyectoEdit(proyecto)}>
                         <i className="fas fa-edit"></i> Editar nombre
                       </button>
@@ -665,23 +678,26 @@ function Dashboard() {
                 {selectedProyecto.capitulos &&
                   selectedProyecto.capitulos.map((capitulo) => (
                     <li key={capitulo.id} className="capitulo-item">
-                      <button
-                        onClick={() => handleCapituloClick(capitulo)}
-                        style={{
-                          backgroundColor: selectedCapitulo && selectedCapitulo.id === capitulo.id ? '#007bff' : '#f0f0f0',
-                          color: selectedCapitulo && selectedCapitulo.id === capitulo.id ? '#fff' : '#333',
-                        }}
-                      >
-                        {editingCapitulo && editingCapitulo.id === capitulo.id ? (
-                          <input
-                            type="text"
-                            value={editingCapitulo.nombre_capitulo}
-                            onChange={(e) => setEditingCapitulo({ ...editingCapitulo, nombre_capitulo: e.target.value })}
-                          />
-                        ) : (
-                          <span>{capitulo.nombre_capitulo}</span>
-                        )}
-                      </button>
+                      <div
+                           className="capitulo-item"
+                              onClick={() => handleCapituloClick(capitulo)}
+                                style={{
+                                 backgroundColor: selectedCapitulo && selectedCapitulo.id === capitulo.id ? '#007bff' : '#f0f0f0',
+                                  color: selectedCapitulo && selectedCapitulo.id === capitulo.id ? '#fff' : '#333',
+                                   cursor: 'pointer',
+                                  }}
+                                    >
+                                  {editingCapitulo && editingCapitulo.id === capitulo.id ? (
+                                  <input
+                                  type="text"
+                                  value={editingCapitulo.nombre_capitulo}
+                                  onChange={(e) => setEditingCapitulo({ ...editingCapitulo, nombre_capitulo: e.target.value })}
+                                  />
+                              ) : (
+                              <span>{capitulo.nombre_capitulo}</span>
+                              )}
+                            </div>
+
                       <div className="capitulo-actions">
                         {editingCapitulo && editingCapitulo.id === capitulo.id ? (
                           <>
@@ -704,60 +720,61 @@ function Dashboard() {
                         )}
                       </div>
                       {selectedCapitulo && selectedCapitulo.id === capitulo.id && (
-                        <div className="escena-list">
-                          <h5>Escenas:</h5>
-                          <button onClick={toggleEscenas} className="btn-toggle">
-                            {escenasExpanded ? 'Ocultar Escenas' : 'Mostrar Escenas'}
-                          </button>
-                          {escenasExpanded && (
-                            <ul>
-                              {selectedCapitulo.escenas &&
-                                selectedCapitulo.escenas.map((escena) => (
-                                  <li key={escena.id} className="escena-item">
-                                    <div className="escena-header">
-                                      <span>{escena.titulo_escena}</span>
-                                      <div className="escena-actions">
-                                        {selectedEscena && selectedEscena.id === escena.id ? (
-                                          <>
-                                            <button className="btn-cancel" onClick={() => setSelectedEscena(null)}>
-                                              <i className="fas fa-times"></i> Cancelar
-                                            </button>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <button className="btn-edit" onClick={() => handleEscenaEdit(escena)}>
-                                              <i className="fas fa-edit"></i> Editar
-                                            </button>
-                                            <button className="btn-delete" onClick={() => handleEscenaDelete(escena.id)}>
-                                              <i className="fas fa-trash"></i> Eliminar
-                                            </button>
-                                          </>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <EscenaDetails
-                                      escena={escena}
-                                      personajes={personajes}
-                                      locaciones={locaciones}
-                                    />
-                                  </li>
-                                ))}
-                            </ul>
-                          )}
-                          <button className="btn-create" onClick={toggleEscenaForm}>
-                            {showEscenaForm ? 'Cancelar' : 'Crear Nueva Escena'}
-                          </button>
-                          {showEscenaForm && (
-                            <EscenaForm
-                              capituloId={selectedCapitulo.id}
-                              escena={selectedEscena}
-                              personajes={personajes}
-                              locaciones={locaciones}
-                              onSubmit={handleEscenaSubmit}
-                            />
-                          )}
-                        </div>
-                      )}
+  <div className="escena-list">
+    <h5>Escenas:</h5>
+    {escenasExpandidas[capitulo.id] && (
+      <div className="escena-container">
+        <ul className="escena-list-ul">
+          {selectedCapitulo.escenas &&
+            selectedCapitulo.escenas.map((escena) => (
+              <li key={escena.id} className="escena-item" onClick={() => handleEscenaEdit(escena)}>
+                <div className="escena-header">
+                  <span>{escena.titulo_escena}</span>
+                  <div className="escena-actions">
+                    {selectedEscena && selectedEscena.id === escena.id ? (
+                      <>
+                        <button className="btn-cancel" onClick={() => setSelectedEscena(null)}>
+                          <i className="fas fa-times"></i> Cancelar
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button className="btn-edit" onClick={() => handleEscenaEdit(escena)}>
+                          <i className="fas fa-edit"></i> Editar
+                        </button>
+                        <button className="btn-delete" onClick={() => handleEscenaDelete(escena.id)}>
+                          <i className="fas fa-trash"></i> Eliminar
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <EscenaDetails
+                  escena={escena}
+                  personajes={personajes}
+                  locaciones={locaciones}
+                />
+              </li>
+            ))}
+        </ul>
+        <div className="escena-form-container">
+          <button className="btn-create" onClick={toggleEscenaForm}>
+            {showEscenaForm ? 'Cancelar' : 'Crear Nueva Escena'}
+          </button>
+          {showEscenaForm && (
+            <EscenaForm
+              capituloId={selectedCapitulo.id}
+              escena={selectedEscena}
+              personajes={personajes}
+              locaciones={locaciones}
+              onSubmit={handleEscenaSubmit}
+            />
+          )}
+        </div>
+      </div>
+    )}
+  </div>
+)}
                     </li>
                   ))}
               </ul>
@@ -881,6 +898,18 @@ function Dashboard() {
                 onCancel={() => setShowLocacionForm(false)}
               />
             )}
+
+            {showPlanDeRodaje && (
+              <PlanDeRodaje
+              proyecto={selectedProyecto}
+              escenas={selectedProyecto.capitulos.flatMap((capitulo) => capitulo.escenas)}
+              inventario={bodega}
+              onClose={handleClosePlanDeRodaje}
+            />
+            
+            )}
+
+
           </div>
         </div>
       )}
