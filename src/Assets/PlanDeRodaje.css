@@ -1,68 +1,97 @@
-
 .plan-de-rodaje {
-  margin-top: 50px; /* Ajusta esta distancia según sea necesario */
-}
-
-.escenas-asignadas,
-.inventario-asignado {
-  margin-top: 10px;
-}
-
-
-.escenas-asignadas ul,
-.inventario-asignado ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-.escena-asignada,
-.item-asignado {
+  margin-top: 50px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 5px;
+  flex-direction: column;
+  position: relative; /* Añadido para posicionamiento absoluto */
 }
 
-.escena-asignada span,
-.item-asignado span {
-  flex-grow: 1;
-  margin-right: 10px;
+.plan-de-rodaje-body {
+  display: flex;
+  flex-direction: row;
 }
 
-.escena-asignada button,
-.item-asignado button {
-  background-color: #f44336;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  padding: 5px 10px;
-  cursor: pointer;
+.filtros-container {
+  flex: 1;
+  padding: 10px;
+  border-right: 1px solid #ccc;
 }
 
-.escena-asignada button:hover,
-.item-asignado button:hover {
-  background-color: #d32f2f;
-}
-
-/* Estilos para el estado de grabación */
-.escena-asignada.grabada span {
-  color: #4caf50;
-}
-
-.escena-asignada.cancelada span {
-  color: #f44336;
-}
-
-.escena-asignada.no-especificada span {
-  color: #9e9e9e;
-}
-
-.plan-de-rodaje-header {
-  text-align: center;
+.formulario-container {
+  flex: 1;
+  padding: 10px;
 }
 
 .btn-dashboard-container {
   position: absolute;
-  top: 20px; /* Ajusta esta distancia según sea necesario */
-  left: 20px; /* Ajusta esta distancia según sea necesario */
+  top: 10px;
+  left: 20px;
+}
+
+.titulo-proyecto {
+  text-align: center;
+  flex-grow: 1;
+}
+
+.plan-de-rodaje-filtros {
+  margin-bottom: 20px;
+}
+
+.nuevo-dia-form {
+  display: flex;
+  align-items: center;
+}
+
+.nuevo-dia-form input {
+  margin-right: 10px;
+}
+
+.guardar-plan-btn {
+  display: block;
+  margin-top: 10px;
+}
+
+/* Estilos adicionales según lo necesitado */
+.escenas-container {
+  flex: 1;
+  padding: 10px;
+  border-right: 1px solid #ccc;
+}
+
+.escenas-container h3 {
+  margin-top: 0;
+}
+
+.escenas-container ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.escena-item {
+  background-color: #f2f2f2;
+  padding: 10px;
+  margin-bottom: 5px;
+  cursor: move;
+}
+
+.dias-de-rodaje {
+  flex: 1;
+  padding: 10px;
+}
+
+.dia-de-rodaje {
+  background-color: #f2f2f2;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+}
+
+.dia-info {
+  margin-bottom: 10px;
+}
+
+.escenas-asignadas,
+.inventario-asignado {
+  padding: 10px;
+  border: 1px solid #ccc;
+  background-color: #fff;
 }

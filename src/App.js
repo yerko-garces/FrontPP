@@ -15,7 +15,7 @@ function App() {
           <Route path="/register" element={<RegisterUser />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard/:projectId" element={<Dashboard />} />
-          <Route path="/plan-de-rodaje/:projectId" element={<PlanDeRodaje />} />
+          <Route path="/plan-de-rodaje" element={<PlanDeRodaje />} />
         </Routes>
       </div>
     </Router>
