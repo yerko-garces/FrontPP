@@ -95,3 +95,46 @@
   border: 1px solid #ccc;
   background-color: #fff;
 }
+
+/* PlanDeRodaje.css (cambios) */
+.dia-de-rodaje {
+  background-color: #f2f2f2;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+}
+
+.dia-info {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.bloque-asignado {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bloque-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.bloque-info span {
+  margin-bottom: 5px;
+}
+
+.bloque-escena {
+  display: flex;
+  align-items: center;
+}
+
+.bloque-escena span {
+  margin-right: 10px;
+}

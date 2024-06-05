@@ -1,71 +1,48 @@
+// DiaDeRodaje.js
 import React, { useState } from 'react';
+import axios from 'axios';
+import dayjs from 'dayjs';
 
-const DiaDeRodaje = ({ dia, bloques, inventario, handleEliminarBloque, handleEliminarInventario, handleAgregarBloque }) => {
-  const [draggedItem, setDraggedItem] = useState(null);
+const DiaDeRodaje = ({ bloque, handleEliminarBloque, handleGuardarBloque }) => {
+  const [titulo, setTitulo] = useState(bloque.titulo || '');
+  const [fecha, setFecha] = useState(bloque.fecha || new Date());
+  const [hora, setHora] = useState(bloque.hora || new Date());
 
-  const handleDragStart = (e, item) => {
-    setDraggedItem(item);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', null);
+  const handleTituloChange = (e) => {
+    setTitulo(e.target.value);
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+  const handleFechaChange = (e) => {
+    setFecha(new Date(e.target.value));
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    handleAgregarBloque(draggedItem, dia);
-    setDraggedItem(null);
+  const handleHoraChange = (e) => {
+    setHora(new Date(`2000-01-01T${e.target.value}:00`));
+  };
+
+  const handleGuardar = () => {
+    const bloqueActualizado = {
+      ...bloque,
+      titulo,
+      fecha,
+      hora,
+    };
+    handleGuardarBloque(bloqueActualizado);
   };
 
   return (
-    <div className="dia-de-rodaje" onDragOver={(e) => handleDragOver(e)} onDrop={(e) => handleDrop(e, null)}>
-      <div className="dia-info">
-        <h4>{dia}</h4>
-        <p>Fecha: {bloques[0]?.fecha ? new Date(bloques[0].fecha).toLocaleDateString() : 'Sin fecha'}</p>
-        <p>Hora: {bloques[0]?.hora ? new Date(bloques[0].hora).toLocaleTimeString() : 'Sin hora'}</p>
-      </div>
-      <div className="escenas-asignadas">
-        <h5>Escenas:</h5>
-        {bloques.length === 0 ? (
-          <p>Ingresa tus escenas aquí</p>
-        ) : (
-          <ul>
-            {bloques.map((bloque) => (
-              <li
-                key={bloque.id}
-                className="escena-asignada"
-                draggable
-                onDragStart={(e) => handleDragStart(e, bloque)}
-              >
-                <span>{bloque.escena ? bloque.escena.titulo : bloque.titulo || 'Sin título'}</span>
-                <button onClick={() => handleEliminarBloque(bloque, dia)}>
-                  Eliminar
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-      <div className="inventario-asignado">
-        <h5>Inventario:</h5>
-        <ul>
-          {inventario?.map((item) => (
-            <li
-              key={item.id}
-              className="item-asignado"
-              draggable
-              onDragStart={(e) => handleDragStart(e, item)}
-            >
-              <span>{item.nombre}</span>
-              <button onClick={() => handleEliminarInventario(item, dia)}>
-                Eliminar
-              </button>
-            </li>
-          ))}
-        </ul>
+    <div className="dia-de-rodaje">
+      <div className="bloque-asignado">
+        <div className="bloque-info">
+          <input type="text" value={titulo} onChange={handleTituloChange} placeholder="Título" />
+          <input type="date" value={dayjs(fecha).format('YYYY-MM-DD')} onChange={handleFechaChange} />
+          <input type="time" value={dayjs(hora).format('HH:mm')} onChange={handleHoraChange} />
+        </div>
+        <div className="bloque-escena">
+        <span>{bloque.escena?.escena?.titulo_escena || 'Sin escena'}</span>
+          <button onClick={() => handleEliminarBloque(bloque)}>Eliminar</button>
+          <button onClick={handleGuardar}>Guardar</button>
+        </div>
       </div>
     </div>
   );

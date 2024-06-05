@@ -1,15 +1,14 @@
-// PlanDeRodaje.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useParams, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import '../Assets/PlanDeRodaje.css';
 import DiaDeRodaje from './DiaDeRodaje';
 
 const filterItems = (items, searchText) => {
   return items.filter(item => {
-    const tituloEscena = item?.titulo || '';
+    const tituloEscena = item?.escena?.titulo_escena || '';
     return tituloEscena.toLowerCase().includes(searchText.toLowerCase());
   });
 };
@@ -22,12 +21,8 @@ const PlanDeRodaje = ({ onClose }) => {
   const [filtro, setFiltro] = useState('');
   const [bloques, setBloques] = useState({});
   const [escenas, setEscenas] = useState([]);
-  const [inventario, setInventario] = useState([]);
   const [loading, setLoading] = useState(true);
   const [draggedItem, setDraggedItem] = useState(null);
-  const [nuevoDia, setNuevoDia] = useState('');
-  const [nuevaFecha, setNuevaFecha] = useState('');
-  const [nuevaHora, setNuevaHora] = useState('');
 
   useEffect(() => {
     if (!proyectoId) {
@@ -43,16 +38,11 @@ const PlanDeRodaje = ({ onClose }) => {
         });
         setEscenas(escenasResponse.data);
 
-        const inventarioResponse = await axios.get(`http://localhost:8080/api/items/bodega/${proyectoId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setInventario(inventarioResponse.data);
-
         const bloquesResponse = await axios.get(`http://localhost:8080/api/bloques/proyecto/${proyectoId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const bloquesPorDia = bloquesResponse.data.reduce((acc, bloque) => {
-          const dia = bloque.fecha;
+          const dia = dayjs(bloque.fecha).format('YYYY-MM-DD');
           acc[dia] = [...(acc[dia] || []), bloque];
           return acc;
         }, {});
@@ -71,47 +61,6 @@ const PlanDeRodaje = ({ onClose }) => {
     setFiltro(e.target.value);
   };
 
-  const handleAgregarEscena = (escena, dia) => {
-    setBloques((prevBloques) => ({
-      ...prevBloques,
-      [dia]: [
-        ...(prevBloques[dia] || []),
-        {
-          escena: escena,
-          fecha: dia,
-          posicion: (prevBloques[dia]?.length || 0) + 1,
-        },
-      ],
-    }));
-  };
-
-  const handleAgregarInventario = (item, dia) => {
-    setBloques((prevBloques) => ({
-      ...prevBloques,
-      [dia]: {
-        ...prevBloques[dia],
-        inventario: [...(prevBloques[dia]?.inventario || []), item],
-      },
-    }));
-  };
-
-  const handleEliminarBloque = (bloque, dia) => {
-    setBloques((prevBloques) => ({
-      ...prevBloques,
-      [dia]: prevBloques[dia].filter((b) => b.id !== bloque.id),
-    }));
-  };
-
-  const handleEliminarInventario = (item, dia) => {
-    setBloques((prevBloques) => ({
-      ...prevBloques,
-      [dia]: {
-        ...prevBloques[dia],
-        inventario: prevBloques[dia].inventario.filter((i) => i.id !== item.id),
-      },
-    }));
-  };
-
   const handleDragStart = (e, item) => {
     setDraggedItem(item);
     e.dataTransfer.effectAllowed = 'move';
@@ -125,92 +74,65 @@ const PlanDeRodaje = ({ onClose }) => {
 
   const handleDrop = (e, dia) => {
     e.preventDefault();
-    if (dia) {
-      handleAgregarEscena(draggedItem, dia);
-    } else if (nuevoDia.trim()) {
-      setBloques((prevBloques) => ({
-        ...prevBloques,
-        [nuevoDia]: [draggedItem],
-      }));
-      setNuevoDia(''); // Restablecer el valor del nuevo día después de crearlo
-    }
+    const nuevoBloque = {
+      escena: draggedItem,
+      fecha: new Date(),
+      hora: new Date(),
+      titulo: '',
+      posicion: bloques[dia]?.length + 1 || 1,
+    };
+    setBloques((prevBloques) => ({
+      ...prevBloques,
+      [dia]: [...(prevBloques[dia] || []), nuevoBloque],
+    }));
     setDraggedItem(null);
   };
 
-  const escenasFiltradas = filterItems(escenas, filtro);
-
-
-  const handleGuardarPlanDeRodaje = async () => {
+  const handleGuardarBloque = async (bloqueActualizado) => {
     const token = localStorage.getItem('token');
-    const bloquesPorEnviar = Object.values(bloques).flatMap(diaBloques => diaBloques);
-
+    const bloqueData = {
+      planDeRodaje: {
+        id: proyectoId,
+      },
+      titulo: bloqueActualizado.titulo,
+      fecha: dayjs(bloqueActualizado.fecha).format('YYYY-MM-DD'),
+      hora: dayjs(bloqueActualizado.hora).format('HH:mm:ss'),
+      escena: {
+        id: bloqueActualizado.escena.id,
+      },
+      posicion: bloqueActualizado.posicion,
+    };
+  
+    console.log('Datos del bloque:', bloqueData);
+  
     try {
-      await Promise.all(bloquesPorEnviar.map(async bloque => {
-        if (bloque.id) {
-          await axios.put(`http://localhost:8080/api/bloques/${bloque.id}`, bloque, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-        } else {
-          await axios.post('http://localhost:8080/api/bloques', bloque, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-        }
-      }));
-      alert('Plan de rodaje guardado correctamente');
+      if (bloqueActualizado.id) {
+        console.log('Enviando solicitud PUT para actualizar bloque:', bloqueActualizado.id);
+        await axios.put(`http://localhost:8080/api/bloques/${bloqueActualizado.id}`, bloqueData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        console.log('Enviando solicitud POST para crear nuevo bloque');
+        await axios.post('http://localhost:8080/api/bloques', bloqueData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+      alert('Bloque guardado correctamente');
     } catch (error) {
-      console.error(error);
-      alert('Error al guardar el plan de rodaje');
+      console.error('Error al guardar el bloque:', error);
+      alert('Error al guardar el bloque');
     }
   };
 
-  const handleAgregarBloque = (escena, dia) => {
-    setBloques((prevBloques) => ({
-      ...prevBloques,
-      [dia]: [
-        ...(prevBloques[dia] || []),
-        {
-          escena: escena,
-          fecha: dia,
-          posicion: (prevBloques[dia]?.length || 0) + 1,
-        },
-      ],
-    }));
+  const handleEliminarBloque = (bloque, dia) => {
+    setBloques((prevBloques) => {
+      const nuevoBloques = { ...prevBloques };
+      nuevoBloques[dia] = prevBloques[dia].filter((b) => b.id !== bloque.id);
+      return nuevoBloques;
+    });
   };
 
-  const handleNuevoDiaChange = (e) => {
-    setNuevoDia(e.target.value);
-  };
-
-  const handleNuevaFechaChange = (e) => {
-    setNuevaFecha(e.target.value);
-  };
-
-  const handleNuevaHoraChange = (e) => {
-    setNuevaHora(e.target.value);
-  };
-
-  const handleAgregarDia = () => {
-    if (nuevoDia.trim() && nuevaFecha.trim() && nuevaHora.trim()) {
-      const fechaNuevaDia = dayjs(nuevaFecha, 'YYYY-MM-DD').toDate();
-      const horaNuevaDia = dayjs(nuevaHora, 'HH:mm').toDate();
-
-      setBloques((prevBloques) => ({
-        ...prevBloques,
-        [nuevoDia]: [
-          {
-            titulo: nuevoDia,
-            fecha: fechaNuevaDia,
-            hora: horaNuevaDia,
-            posicion: 1,
-          },
-        ],
-      }));
-
-      setNuevoDia('');
-      setNuevaFecha('');
-      setNuevaHora('');
-    }
-  };
+  const escenasFiltradas = filterItems(escenas, filtro);
 
   if (loading) {
     return <div>Cargando...</div>;
@@ -228,7 +150,7 @@ const PlanDeRodaje = ({ onClose }) => {
         </div>
         <h1 className="titulo-proyecto">Título del Proyecto</h1>
       </div>
-  
+
       <div className="plan-de-rodaje-controles">
         <div className="plan-de-rodaje-filtros">
           <input
@@ -238,63 +160,42 @@ const PlanDeRodaje = ({ onClose }) => {
             onChange={handleFiltroChange}
           />
         </div>
-  
-        <div className="nuevo-dia-container">
-          <div className="nuevo-dia-form">
-            <input
-              type="text"
-              placeholder="Nuevo día de rodaje"
-              value={nuevoDia}
-              onChange={handleNuevoDiaChange}
-            />
-            <input
-              type="date"
-              value={nuevaFecha}
-              onChange={handleNuevaFechaChange}
-            />
-            <input
-              type="time"
-              value={nuevaHora}
-              onChange={handleNuevaHoraChange}
-            />
-            <button onClick={handleAgregarDia}>Agregar día</button>
-          </div>
-          <button onClick={handleGuardarPlanDeRodaje}>Guardar Plan de Rodaje</button>
-        </div>
       </div>
-  
+
       <div className="plan-de-rodaje-body">
         <div className="escenas-container">
           <h3>Escenas</h3>
           <ul>
-            {escenasFiltradas.map((escena) => (
+            {escenasFiltradas.map((escenaObj) => (
               <li
-                key={escena.id}
+                key={escenaObj.escena.id}
                 className="escena-item"
                 draggable
-                onDragStart={(e) => handleDragStart(e, escena)}
+                onDragStart={(e) => handleDragStart(e, escenaObj)}
               >
-                <span>{escena.titulo || 'Sin título'}</span>
+                <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
               </li>
             ))}
           </ul>
         </div>
-  
+
         <div
           className="dias-de-rodaje"
           onDragOver={(e) => handleDragOver(e)}
-          onDrop={(e) => handleDrop(e, null)}
+          onDrop={(e) => handleDrop(e, Object.keys(bloques)[0])}
         >
           {Object.keys(bloques).map((dia) => (
-            <DiaDeRodaje
-              key={dia}
-              dia={dia}
-              bloques={bloques[dia]}
-              inventario={bloques[dia]?.inventario}
-              handleEliminarBloque={handleEliminarBloque}
-              handleEliminarInventario={handleEliminarInventario}
-              handleAgregarBloque={handleAgregarBloque}
-            />
+            <div key={dia}>
+              <h4>{dia}</h4>
+              {bloques[dia].map((bloque) => (
+                <DiaDeRodaje
+                  key={bloque.id || `${dia}-${bloque.posicion}`}
+                  bloque={bloque}
+                  handleEliminarBloque={handleEliminarBloque}
+                  handleGuardarBloque={handleGuardarBloque}
+                />
+              ))}
+            </div>
           ))}
         </div>
       </div>
