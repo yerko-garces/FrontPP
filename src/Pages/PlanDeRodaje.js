@@ -38,7 +38,7 @@ const PlanDeRodaje = ({ onClose }) => {
         });
         setEscenas(escenasResponse.data);
 
-        const bloquesResponse = await axios.get(`http://localhost:8080/api/bloques/proyecto/${proyectoId}`, {
+        const bloquesResponse = await axios.get(`http://localhost:8080/api/planes-de-rodaje/${proyectoId}/bloques`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const bloquesPorDia = bloquesResponse.data.reduce((acc, bloque) => {
@@ -97,26 +97,22 @@ const PlanDeRodaje = ({ onClose }) => {
       titulo: bloqueActualizado.titulo,
       fecha: dayjs(bloqueActualizado.fecha).format('YYYY-MM-DD'),
       hora: dayjs(bloqueActualizado.hora).format('HH:mm:ss'),
-      escena: {
-        id: bloqueActualizado.escena.id,
-      },
       posicion: bloqueActualizado.posicion,
     };
+  
+    if (bloqueActualizado.escena?.id) {
+      bloqueData.escena = {
+        id: bloqueActualizado.escena.id,
+      };
+    }
   
     console.log('Datos del bloque:', bloqueData);
   
     try {
-      if (bloqueActualizado.id) {
-        console.log('Enviando solicitud PUT para actualizar bloque:', bloqueActualizado.id);
-        await axios.put(`http://localhost:8080/api/bloques/${bloqueActualizado.id}`, bloqueData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } else {
-        console.log('Enviando solicitud POST para crear nuevo bloque');
-        await axios.post('http://localhost:8080/api/bloques', bloqueData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      }
+      console.log('Enviando solicitud PUT para actualizar bloque');
+      await axios.put('http://localhost:8080/api/bloques/actualizar', [bloqueData], {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       alert('Bloque guardado correctamente');
     } catch (error) {
       console.error('Error al guardar el bloque:', error);
