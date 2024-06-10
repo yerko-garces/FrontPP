@@ -20,6 +20,10 @@
   flex: 1;
   padding: 10px;
 }
+.filtro-container {
+  display: inline-block;
+  margin-right: 10px; /* Ajusta según sea necesario */
+}
 
 .btn-dashboard-container {
   position: absolute;

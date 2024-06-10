@@ -6,10 +6,15 @@ import { Link } from 'react-router-dom';
 import '../Assets/PlanDeRodaje.css';
 import DiaDeRodaje from './DiaDeRodaje';
 
-const filterItems = (items, searchText) => {
+const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter) => {
   return items.filter(item => {
     const tituloEscena = item?.escena?.titulo_escena || '';
-    return tituloEscena.toLowerCase().includes(searchText.toLowerCase());
+    const diaNoche = item?.escena?.diaNoche || '';
+    const interiorExterior = item?.escena?.interiorExterior || '';
+    const matchesSearchText = tituloEscena.toLowerCase().includes(searchText.toLowerCase());
+    const matchesDiaNoche = diaNocheFilter ? diaNoche === diaNocheFilter : true;
+    const matchesInteriorExterior = interiorExteriorFilter ? interiorExterior === interiorExteriorFilter : true;
+    return matchesSearchText && matchesDiaNoche && matchesInteriorExterior;
   });
 };
 
@@ -19,10 +24,13 @@ const PlanDeRodaje = ({ onClose }) => {
   const { proyectoId } = location.state || {};
 
   const [filtro, setFiltro] = useState('');
+  const [diaNocheFiltro, setDiaNocheFiltro] = useState(''); // Estado para el filtro de Día/Noche
+  const [interiorExteriorFiltro, setInteriorExteriorFiltro] = useState(''); // Estado para el filtro de Interior/Exterior
   const [bloques, setBloques] = useState({});
   const [escenas, setEscenas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [draggedItem, setDraggedItem] = useState(null);
+  const [proyecto, setProyecto] = useState(null); // Estado para almacenar los detalles del proyecto
 
   useEffect(() => {
     if (!proyectoId) {
@@ -37,7 +45,10 @@ const PlanDeRodaje = ({ onClose }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         setEscenas(escenasResponse.data);
-
+        const proyectoResponse = await axios.get(`http://localhost:8080/api/proyectos/proyecto/${proyectoId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setProyecto(proyectoResponse.data); // Establecer los detalles del proyecto en el estado
         const bloquesResponse = await axios.get(`http://localhost:8080/api/planes-de-rodaje/${proyectoId}/bloques`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -59,6 +70,14 @@ const PlanDeRodaje = ({ onClose }) => {
 
   const handleFiltroChange = (e) => {
     setFiltro(e.target.value);
+  };
+
+  const handleDiaNocheFiltroChange = (e) => {
+    setDiaNocheFiltro(e.target.value);
+  };
+
+  const handleInteriorExteriorFiltroChange = (e) => {
+    setInteriorExteriorFiltro(e.target.value);
   };
 
   const handleDragStart = (e, item) => {
@@ -99,15 +118,15 @@ const PlanDeRodaje = ({ onClose }) => {
       hora: dayjs(bloqueActualizado.hora).format('HH:mm:ss'),
       posicion: bloqueActualizado.posicion,
     };
-  
+
     if (bloqueActualizado.escena?.id) {
       bloqueData.escena = {
         id: bloqueActualizado.escena.id,
       };
     }
-  
+
     console.log('Datos del bloque:', bloqueData);
-  
+
     try {
       console.log('Enviando solicitud PUT para actualizar bloque');
       await axios.put('http://localhost:8080/api/bloques/actualizar', [bloqueData], {
@@ -128,7 +147,7 @@ const PlanDeRodaje = ({ onClose }) => {
     });
   };
 
-  const escenasFiltradas = filterItems(escenas, filtro);
+  const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro);
 
   if (loading) {
     return <div>Cargando...</div>;
@@ -144,10 +163,12 @@ const PlanDeRodaje = ({ onClose }) => {
             </button>
           </Link>
         </div>
-        <h1 className="titulo-proyecto">Título del Proyecto</h1>
+        <h1 className="titulo-proyecto">{proyecto.titulo}</h1>
       </div>
-
-      <div className="plan-de-rodaje-controles">
+      <div className="plan-de-rodaje-body">
+        <div className="escenas-container">
+          <h3>Escenas</h3>
+          <div className="plan-de-rodaje-controles">
         <div className="plan-de-rodaje-filtros">
           <input
             type="text"
@@ -155,12 +176,18 @@ const PlanDeRodaje = ({ onClose }) => {
             value={filtro}
             onChange={handleFiltroChange}
           />
+          <select value={diaNocheFiltro} onChange={handleDiaNocheFiltroChange}>
+            <option value="">Dia-Noche</option>
+            <option value="DIA">Día</option>
+            <option value="NOCHE">Noche</option>
+          </select>
+          <select value={interiorExteriorFiltro} onChange={handleInteriorExteriorFiltroChange}>
+            <option value="">Interior-Exterior</option>
+            <option value="INTERIOR">Interior</option>
+            <option value="EXTERIOR">Exterior</option>
+          </select>
         </div>
       </div>
-
-      <div className="plan-de-rodaje-body">
-        <div className="escenas-container">
-          <h3>Escenas</h3>
           <ul>
             {escenasFiltradas.map((escenaObj) => (
               <li
@@ -200,3 +227,5 @@ const PlanDeRodaje = ({ onClose }) => {
 };
 
 export default PlanDeRodaje;
+
+

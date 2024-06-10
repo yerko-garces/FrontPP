@@ -6,8 +6,8 @@ import '../Assets/Forms.css';
 function EscenaForm({ capituloId, escena, personajes, locaciones, items, onSubmit }) {
   const [tituloEscena, setTituloEscena] = useState(escena ? escena.titulo_escena : '');
   const [numeroEscena, setNumeroEscena] = useState(escena ? escena.numeroEscena : '');
-  const [interiorExterior, setInteriorExterior] = useState(escena ? escena.interior_exterior : 'INTERIOR');
-  const [diaNoche, setDiaNoche] = useState(escena ? escena.dia_noche : 'DIA');
+  const [interiorExterior, setInteriorExterior] = useState(escena ? escena.interiorExterior : 'INTERIOR');
+  const [diaNoche, setDiaNoche] = useState(escena ? escena.diaNoche : 'DIA');
   const [resumen, setResumen] = useState(escena ? escena.resumen : '');
   const [selectedPersonajes, setSelectedPersonajes] = useState(escena ? escena.personajes.map(p => p.id) : []);
   const [selectedLocacion, setSelectedLocacion] = useState(escena ? (escena.locacion ? escena.locacion.id : null) : null);
@@ -31,8 +31,8 @@ function EscenaForm({ capituloId, escena, personajes, locaciones, items, onSubmi
     onSubmit({
       titulo_escena: tituloEscena,
       numeroEscena,
-      interior_exterior: interiorExterior,
-      dia_noche: diaNoche,
+      interiorExterior: interiorExterior,
+      diaNoche: diaNoche,
       resumen,
       personajes: selectedPersonajes,
       locacion: selectedLocacion,
