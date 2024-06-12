@@ -293,7 +293,10 @@ const PlanDeRodaje = ({ onClose }) => {
         </div>
         <h1 className="titulo-proyecto">{proyecto.titulo}</h1>
       </div>
-      <div className="plan-de-rodaje-controles">
+      
+      <div className="plan-de-rodaje-body">
+        <div className="escenas-container">
+        <div className="plan-de-rodaje-controles">
         <div className="plan-de-rodaje-filtros">
           <input
             type="text"
@@ -313,8 +316,6 @@ const PlanDeRodaje = ({ onClose }) => {
           </select>
         </div>
       </div>
-      <div className="plan-de-rodaje-body">
-        <div className="escenas-container">
           <h3>Escenas</h3>
           <ul ref={escenasRef}>
             {escenasFiltradas.map((escenaObj) => (
@@ -331,7 +332,7 @@ const PlanDeRodaje = ({ onClose }) => {
                   setDraggedItem(escenaObj);
                 }}
               >
-                <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
+                <span>{escenaObj.escena.capitulo || 'Sin título'}</span>
               </li>
             ))}
           </ul>
