@@ -1,41 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+
 
 const DiaDeRodaje = ({ bloque, handleEliminarBloque, handleGuardarBloque, dia, actualizarBloque }) => {
   const [titulo, setTitulo] = useState(bloque.titulo || '');
   const [fecha, setFecha] = useState(dayjs(bloque.fecha).isValid() ? dayjs(bloque.fecha).toDate() : new Date());
-  const [hora, setHora] = useState(bloque.hora ? new Date(`2000-01-01T${bloque.hora}:00Z`) : new Date());
+  const [hora, setHora] = useState(bloque.hora || '');
+
+  useEffect(() => {
+    if (typeof bloque.hora === 'string') {
+      setHora(bloque.hora);
+    }
+  }, [bloque.hora]);
 
   const handleTituloChange = (e) => {
     const newTitulo = e.target.value;
     setTitulo(newTitulo);
     actualizarBloque({ ...bloque, titulo: newTitulo }, dia);
   };
-  
-  const handleFechaChange = (e) => {
-    const nuevaFecha = new Date(e.target.value);
-    setFecha(nuevaFecha);
-    actualizarBloque({ ...bloque, fecha: nuevaFecha }, dia);
+
+  const handleFechaChange = (date) => {
+    setFecha(date);
+    actualizarBloque({ ...bloque, fecha: date }, dia);
   };
 
   const handleHoraChange = (e) => {
-    const [horaStr, minutoStr] = e.target.value.split(':');
-    const nuevaHora = new Date(fecha);
-    nuevaHora.setHours(parseInt(horaStr, 10));
-    nuevaHora.setMinutes(parseInt(minutoStr, 10));
-    setHora(nuevaHora);
-    actualizarBloque({ ...bloque, hora: nuevaHora }, dia);
-  };
-
-  const handleGuardar = () => {
-    handleGuardarBloque({ ...bloque, titulo, fecha, hora });
+    const newHora = e.target.value;
+    setHora(newHora);
+    actualizarBloque({ ...bloque, hora: newHora }, dia);
   };
 
   const handleEliminar = () => {
     handleEliminarBloque(bloque.id, dia);
   };
 
-   return (
+  return (
     <div className="dia-de-rodaje">
       <input
         type="text"
@@ -43,28 +44,29 @@ const DiaDeRodaje = ({ bloque, handleEliminarBloque, handleGuardarBloque, dia, a
         value={titulo}
         onChange={handleTituloChange}
       />
-      <input
-        type="date"
-        value={dayjs(fecha).format('YYYY-MM-DD')} // Mostrar la fecha en formato 'YYYY-MM-DD'
+      <DatePicker
+        selected={fecha}
         onChange={handleFechaChange}
+        dateFormat="dd/MM/yyyy" // Cambio de formato de fecha
       />
       <input
         type="time"
-        value={`${hora.getHours()}:${hora.getMinutes().toString().padStart(2, '0')}`}
+        value={hora}
         onChange={handleHoraChange}
       />
-      <button onClick={handleGuardar}>Guardar</button>
-      <button onClick={handleEliminar}>Eliminar</button>
       {bloque.escena ? (
         <div className="bloque-escena">
           <span>Escena:</span>
           <span>{bloque.escena.titulo_escena || 'Sin título'}</span>
+          <span>Resumen:</span>
+          <span>{bloque.escena.resumen || 'Sin título'}</span>
         </div>
       ) : (
         <div className="bloque-escena">
           <span>No hay escena asignada a este bloque</span>
         </div>
       )}
+      <button className="eliminar-btn" onClick={handleEliminar}>Eliminar</button>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-// PlanDeRodaje.js
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -7,6 +6,7 @@ import { Link } from 'react-router-dom';
 import Sortable from 'sortablejs';
 import '../Assets/PlanDeRodaje.css';
 import DiaDeRodaje from './DiaDeRodaje';
+import html2pdf from 'html2pdf.js'; // Importación de html2pdf.js
 
 const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter) => {
   return items.filter(item => {
@@ -90,7 +90,7 @@ const PlanDeRodaje = ({ onClose }) => {
         }
       });
     }
-  
+
     Object.keys(bloquesRefs.current).forEach((dia) => {
       if (bloquesRefs.current[dia]) {
         Sortable.create(bloquesRefs.current[dia], {
@@ -121,7 +121,6 @@ const PlanDeRodaje = ({ onClose }) => {
       }
     });
   }, [proyectoId, navigate, escenas, bloques]);
-  
 
   const handleFiltroChange = (e) => {
     setFiltro(e.target.value);
@@ -159,13 +158,12 @@ const PlanDeRodaje = ({ onClose }) => {
     }
   };
 
-
   const handleGuardarTodosBloques = async () => {
     const token = localStorage.getItem('token');
     const bloquesAGuardar = Object.values(bloques).flatMap((bloquesPorDia) =>
       bloquesPorDia.map(formatearBloque)
     );
-  
+
     try {
       console.log('Enviando solicitud PUT para actualizar bloques');
       await axios.put('http://localhost:8080/api/bloques/actualizar', bloquesAGuardar, {
@@ -179,26 +177,20 @@ const PlanDeRodaje = ({ onClose }) => {
   };
 
   const formatearBloque = (bloque) => {
-  const bloqueFormateado = {
-    planDeRodaje: {
-      id: proyectoId,
-    },
-    titulo: bloque.titulo !== undefined ? bloque.titulo : null,
-    fecha: dayjs(bloque.fecha).isValid() ? dayjs(bloque.fecha).format('YYYY-MM-DD') : '',
-    posicion: bloque.posicion,
-    escena: bloque.escena?.id ? { id: bloque.escena.id } : null,
-    id: bloque.id || null,
-    hora: bloque.hora ? `${bloque.hora.getHours().toString().padStart(2, '0')}:${bloque.hora.getMinutes().toString().padStart(2, '0')}` : null,
+    const bloqueFormateado = {
+      planDeRodaje: {
+        id: proyectoId,
+      },
+      titulo: bloque.titulo !== undefined ? bloque.titulo : null,
+      fecha: dayjs(bloque.fecha).isValid() ? dayjs(bloque.fecha).format('YYYY-MM-DD') : '',
+      posicion: bloque.posicion,
+      escena: bloque.escena?.id ? { id: bloque.escena.id } : null,
+      id: bloque.id || null,
+      hora: bloque.hora ? `${bloque.hora.getHours().toString().padStart(2, '0')}:${bloque.hora.getMinutes().toString().padStart(2, '0')}` : null,
+    };
+
+    return bloqueFormateado;
   };
-
-  return bloqueFormateado;
-};
-
-
-  
-  
-
-
 
   const handleEliminarBloque = async (id, dia) => {
     try {
@@ -216,42 +208,37 @@ const PlanDeRodaje = ({ onClose }) => {
     } catch (error) {
       console.error('Error al eliminar el bloque:', error);
       alert('Error al eliminar el bloque');
-    } 
+    }
   };
-  
-
- 
 
   const handleDrop = (e, dia, indexDestino) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const bloqueData = JSON.parse(e.dataTransfer.getData('bloqueData'));
-  const { escena, fecha, hora } = bloqueData;
+    const bloqueData = JSON.parse(e.dataTransfer.getData('bloqueData'));
+    const { escena, fecha, hora } = bloqueData;
 
-  if (escena) {
-    const nuevoBloque = {
-      escena: { ...escena },
-      fecha: new Date(),
-      hora: new Date(),
-      titulo: '',
-      posicion: bloques[dia]?.length + 1 || 1,
-    };
+    if (escena) {
+      const nuevoBloque = {
+        escena: { ...escena },
+        fecha: new Date(),
+        hora: new Date(),
+        titulo: '',
+        posicion: bloques[dia]?.length + 1 || 1,
+      };
 
-    setBloques((prevBloques) => {
-      const nuevoBloques = { ...prevBloques };
-      if (indexDestino !== undefined) {
-        nuevoBloques[dia].splice(indexDestino, 0, nuevoBloque);
-      } else {
-        nuevoBloques[dia] = [...(nuevoBloques[dia] || []), nuevoBloque];
-      }
-      return nuevoBloques;
-    });
-  }
+      setBloques((prevBloques) => {
+        const nuevoBloques = { ...prevBloques };
+        if (indexDestino !== undefined) {
+          nuevoBloques[dia].splice(indexDestino, 0, nuevoBloque);
+        } else {
+          nuevoBloques[dia] = [...(nuevoBloques[dia] || []), nuevoBloque];
+        }
+        return nuevoBloques;
+      });
+    }
 
-  setDraggedItem(null);
-};
-
-  
+    setDraggedItem(null);
+  };
 
   const handleDragStart = (e) => {
     setDraggedItem(e.item);
@@ -276,6 +263,11 @@ const PlanDeRodaje = ({ onClose }) => {
   };
 
   const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro);
+
+  const generarPDF = () => {
+    const elemento = document.querySelector('.plan-de-rodaje'); // Selecciona el elemento a convertir en PDF
+    html2pdf().from(elemento).save();
+  };
 
   if (loading) {
     return <div>Cargando...</div>;
@@ -332,6 +324,7 @@ const PlanDeRodaje = ({ onClose }) => {
                 }}
               >
                 <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
+                <span>{escenaObj.escena.resumen}</span>
               </li>
             ))}
           </ul>
@@ -359,11 +352,9 @@ const PlanDeRodaje = ({ onClose }) => {
         ))}
       </div>
       <button onClick={handleGuardarTodosBloques}>Guardar Bloques</button>
+      <button onClick={generarPDF}>Descargar PDF</button>
     </div>
   );
-  
 };
 
 export default PlanDeRodaje;
-
-
