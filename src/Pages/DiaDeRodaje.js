@@ -1,49 +1,70 @@
-// DiaDeRodaje.js
 import React, { useState } from 'react';
-import axios from 'axios';
 import dayjs from 'dayjs';
 
-const DiaDeRodaje = ({ bloque, handleEliminarBloque, handleGuardarBloque }) => {
+const DiaDeRodaje = ({ bloque, handleEliminarBloque, handleGuardarBloque, dia, actualizarBloque }) => {
   const [titulo, setTitulo] = useState(bloque.titulo || '');
-  const [fecha, setFecha] = useState(bloque.fecha || new Date());
-  const [hora, setHora] = useState(bloque.hora || new Date());
+  const [fecha, setFecha] = useState(dayjs(bloque.fecha).isValid() ? dayjs(bloque.fecha).toDate() : new Date());
+  const [hora, setHora] = useState(bloque.hora ? new Date(`2000-01-01T${bloque.hora}:00Z`) : new Date());
 
   const handleTituloChange = (e) => {
-    setTitulo(e.target.value);
+    const newTitulo = e.target.value;
+    setTitulo(newTitulo);
+    actualizarBloque({ ...bloque, titulo: newTitulo }, dia);
   };
-
+  
   const handleFechaChange = (e) => {
-    setFecha(new Date(e.target.value));
+    const nuevaFecha = new Date(e.target.value);
+    setFecha(nuevaFecha);
+    actualizarBloque({ ...bloque, fecha: nuevaFecha }, dia);
   };
 
   const handleHoraChange = (e) => {
-    setHora(new Date(`2000-01-01T${e.target.value}:00`));
+    const [horaStr, minutoStr] = e.target.value.split(':');
+    const nuevaHora = new Date(fecha);
+    nuevaHora.setHours(parseInt(horaStr, 10));
+    nuevaHora.setMinutes(parseInt(minutoStr, 10));
+    setHora(nuevaHora);
+    actualizarBloque({ ...bloque, hora: nuevaHora }, dia);
   };
 
   const handleGuardar = () => {
-    const bloqueActualizado = {
-      ...bloque,
-      titulo,
-      fecha,
-      hora,
-    };
-    handleGuardarBloque(bloqueActualizado);
+    handleGuardarBloque({ ...bloque, titulo, fecha, hora });
   };
 
-  return (
+  const handleEliminar = () => {
+    handleEliminarBloque(bloque.id, dia);
+  };
+
+   return (
     <div className="dia-de-rodaje">
-      <div className="bloque-asignado">
-        <div className="bloque-info">
-          <input type="text" value={titulo} onChange={handleTituloChange} placeholder="Título" />
-          <input type="date" value={dayjs(fecha).format('YYYY-MM-DD')} onChange={handleFechaChange} />
-          <input type="time" value={dayjs(hora).format('HH:mm')} onChange={handleHoraChange} />
-        </div>
+      <input
+        type="text"
+        placeholder="Título del bloque"
+        value={titulo}
+        onChange={handleTituloChange}
+      />
+      <input
+        type="date"
+        value={dayjs(fecha).format('YYYY-MM-DD')} // Mostrar la fecha en formato 'YYYY-MM-DD'
+        onChange={handleFechaChange}
+      />
+      <input
+        type="time"
+        value={`${hora.getHours()}:${hora.getMinutes().toString().padStart(2, '0')}`}
+        onChange={handleHoraChange}
+      />
+      <button onClick={handleGuardar}>Guardar</button>
+      <button onClick={handleEliminar}>Eliminar</button>
+      {bloque.escena ? (
         <div className="bloque-escena">
-        <span>{bloque.escena?.escena?.titulo_escena || 'Sin escena'}</span>
-          <button onClick={() => handleEliminarBloque(bloque)}>Eliminar</button>
-          <button onClick={handleGuardar}>Guardar</button>
+          <span>Escena:</span>
+          <span>{bloque.escena.titulo_escena || 'Sin título'}</span>
         </div>
-      </div>
+      ) : (
+        <div className="bloque-escena">
+          <span>No hay escena asignada a este bloque</span>
+        </div>
+      )}
     </div>
   );
 };

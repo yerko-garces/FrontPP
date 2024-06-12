@@ -2,23 +2,10 @@
   margin-top: 50px;
   display: flex;
   flex-direction: column;
-  position: relative; /* Añadido para posicionamiento absoluto */
 }
 
-.plan-de-rodaje-body {
-  display: flex;
-  flex-direction: row;
-}
-
-.filtros-container {
-  flex: 1;
-  padding: 10px;
-  border-right: 1px solid #ccc;
-}
-
-.formulario-container {
-  flex: 1;
-  padding: 10px;
+.plan-de-rodaje-header {
+  position: relative;
 }
 .filtro-container {
   display: inline-block;
@@ -33,7 +20,41 @@
 
 .titulo-proyecto {
   text-align: center;
-  flex-grow: 1;
+  margin-bottom: 20px;
+}
+
+.plan-de-rodaje-body {
+  display: flex;
+}
+
+.escenas-container {
+  flex: 1;
+  margin-right: 10px; /* Espacio entre las escenas y los bloques */
+  overflow-y: auto; /* Agrega una barra de desplazamiento vertical si es necesario */
+  border-right: 1px solid #ccc; /* Línea divisoria entre escenas y bloques */
+}
+
+.bloques-container {
+  flex: 1;
+  height: 100%; /* Ajusta la altura al 100% del contenedor padre */
+  overflow-y: auto; /* Agrega una barra de desplazamiento vertical si es necesario */
+}
+
+
+.filtros-container {
+  width: 50%;
+  padding: 10px;
+  border-right: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+.formulario-container {
+  width: 50%;
+  padding: 10px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
 .plan-de-rodaje-filtros {
@@ -43,6 +64,7 @@
 .nuevo-dia-form {
   display: flex;
   align-items: center;
+  margin-bottom: 20px;
 }
 
 .nuevo-dia-form input {
@@ -52,13 +74,6 @@
 .guardar-plan-btn {
   display: block;
   margin-top: 10px;
-}
-
-/* Estilos adicionales según lo necesitado */
-.escenas-container {
-  flex: 1;
-  padding: 10px;
-  border-right: 1px solid #ccc;
 }
 
 .escenas-container h3 {
@@ -142,3 +157,34 @@
 .bloque-escena span {
   margin-right: 10px;
 }
+
+.escena-list .escena-item,
+.bloque-list .bloque-item {
+  cursor: grab;
+}
+
+.escena-item {
+  background-color: #f2f2f2;
+  padding: 10px;
+  margin-bottom: 5px;
+  cursor: move;
+  border: 1px solid #ccc; /* Añadir un borde para mejor visualización */
+}
+
+.escena-item-container {
+  cursor: grab;
+}
+
+.bloque-item {
+  background-color: #fff;
+  padding: 10px;
+  margin-bottom: 5px;
+  cursor: move;
+  border: 1px solid #ccc; /* Añadir un borde para mejor visualización */
+}
+
+.bloques-wrapper {
+  height: 100%;
+  overflow-y: auto; /* Asegura que haya desplazamiento vertical si es necesario */
+}
+
