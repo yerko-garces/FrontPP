@@ -216,11 +216,11 @@ const PlanDeRodaje = ({ onClose }) => {
     } catch (error) {
       console.error('Error al eliminar el bloque:', error);
       alert('Error al eliminar el bloque');
-    }
+    } 
   };
   
 
-  const escenasFiltradas = filterItems(escenas, filtro);
+ 
 
   const handleDrop = (e, dia, indexDestino) => {
   e.preventDefault();
@@ -267,6 +267,16 @@ const PlanDeRodaje = ({ onClose }) => {
     });
   };
 
+  const handleDiaNocheFiltroChange = (e) => {
+    setDiaNocheFiltro(e.target.value);
+  };
+
+  const handleInteriorExteriorFiltroChange = (e) => {
+    setInteriorExteriorFiltro(e.target.value);
+  };
+
+  const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro);
+
   if (loading) {
     return <div>Cargando...</div>;
   }
@@ -283,10 +293,7 @@ const PlanDeRodaje = ({ onClose }) => {
         </div>
         <h1 className="titulo-proyecto">{proyecto.titulo}</h1>
       </div>
-      <div className="plan-de-rodaje-body">
-        <div className="escenas-container">
-          <h3>Escenas</h3>
-          <div className="plan-de-rodaje-controles">
+      <div className="plan-de-rodaje-controles">
         <div className="plan-de-rodaje-filtros">
           <input
             type="text"
@@ -306,62 +313,55 @@ const PlanDeRodaje = ({ onClose }) => {
           </select>
         </div>
       </div>
-
       <div className="plan-de-rodaje-body">
-      <div className="escenas-container">
-  <h3>Escenas</h3>
-  <ul ref={escenasRef}>
-    {escenasFiltradas.map((escenaObj) => (
-      <li
-        key={escenaObj.escena.id}
-        className="escena-item"
-        data-id={escenaObj.escena.id}
-        draggable // Habilitar la capacidad de arrastre
-        onDragStart={(e) => {
-          // Establecer los datos del bloque en los datos de transferencia
-          const bloqueData = JSON.stringify(escenaObj);
-          e.dataTransfer.setData('bloqueData', bloqueData);
-          // Establecer el elemento arrastrado en el estado
-          setDraggedItem(escenaObj);
-        }}
-      >
-        <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
-      </li>
-    ))}
-  </ul>
-</div>
-
-
-
-
-
-{Object.keys(bloques).map((dia) => (
-  <div
-    key={`dia-${dia}`}
-    className="dias-de-rodaje"
-    data-dia={dia}
-    ref={(el) => (bloquesRefs.current[dia] = el)}
-  >
-    <h4>{dia}</h4>
-    {bloques[dia].map((bloque) => (
-      <div key={bloque.id} className="bloque-item">
-        <DiaDeRodaje
-          bloque={bloque}
-          handleEliminarBloque={handleEliminarBloque}
-          handleGuardarBloque={handleGuardarBloque}
-          dia={dia}
-          actualizarBloque={actualizarBloque}
-        />
+        <div className="escenas-container">
+          <h3>Escenas</h3>
+          <ul ref={escenasRef}>
+            {escenasFiltradas.map((escenaObj) => (
+              <li
+                key={escenaObj.escena.id}
+                className="escena-item"
+                data-id={escenaObj.escena.id}
+                draggable // Habilitar la capacidad de arrastre
+                onDragStart={(e) => {
+                  // Establecer los datos del bloque en los datos de transferencia
+                  const bloqueData = JSON.stringify(escenaObj);
+                  e.dataTransfer.setData('bloqueData', bloqueData);
+                  // Establecer el elemento arrastrado en el estado
+                  setDraggedItem(escenaObj);
+                }}
+              >
+                <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {Object.keys(bloques).map((dia) => (
+          <div
+            key={`dia-${dia}`}
+            className="dias-de-rodaje"
+            data-dia={dia}
+            ref={(el) => (bloquesRefs.current[dia] = el)}
+          >
+            <h4>{dia}</h4>
+            {bloques[dia].map((bloque) => (
+              <div key={bloque.id} className="bloque-item">
+                <DiaDeRodaje
+                  bloque={bloque}
+                  handleEliminarBloque={handleEliminarBloque}
+                  handleGuardarBloque={handleGuardarBloque}
+                  dia={dia}
+                  actualizarBloque={actualizarBloque}
+                />
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
-    ))}
-  </div>
-))}
-
-      </div>
-
       <button onClick={handleGuardarTodosBloques}>Guardar Bloques</button>
     </div>
   );
+  
 };
 
 export default PlanDeRodaje;
