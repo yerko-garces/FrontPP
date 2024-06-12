@@ -1,4 +1,3 @@
-// PlanDeRodaje.js
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -7,6 +6,7 @@ import { Link } from 'react-router-dom';
 import Sortable from 'sortablejs';
 import '../Assets/PlanDeRodaje.css';
 import DiaDeRodaje from './DiaDeRodaje';
+import html2pdf from 'html2pdf.js'; // Importación de html2pdf.js
 
 const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter) => {
   return items.filter(item => {
@@ -26,15 +26,16 @@ const PlanDeRodaje = ({ onClose }) => {
   const { proyectoId } = location.state || {};
 
   const [filtro, setFiltro] = useState('');
-  const [diaNocheFiltro, setDiaNocheFiltro] = useState(''); // Estado para el filtro de Día/Noche
-  const [interiorExteriorFiltro, setInteriorExteriorFiltro] = useState(''); // Estado para el filtro de Interior/Exterior
+  const [diaNocheFiltro, setDiaNocheFiltro] = useState('');
+  const [interiorExteriorFiltro, setInteriorExteriorFiltro] = useState('');
   const [bloques, setBloques] = useState({});
   const [escenas, setEscenas] = useState([]);
   const [loading, setLoading] = useState(true);
   const escenasRef = useRef(null);
   const bloquesRefs = useRef({});
   const [draggedItem, setDraggedItem] = useState(null);
-  const [proyecto, setProyecto] = useState(null); // Estado para almacenar los detalles del proyecto
+  const [proyecto, setProyecto] = useState(null);
+  const [capitulos, setCapitulos] = useState([]);
 
   useEffect(() => {
     if (!proyectoId) {
@@ -52,7 +53,17 @@ const PlanDeRodaje = ({ onClose }) => {
         const proyectoResponse = await axios.get(`http://localhost:8080/api/proyectos/proyecto/${proyectoId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setProyecto(proyectoResponse.data); // Establecer los detalles del proyecto en el estado
+        setProyecto(proyectoResponse.data);
+
+        const capitulosResponse = await axios.get(`http://localhost:8080/api/capitulos/${proyectoId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const capitulosConEscenas = capitulosResponse.data.map(capitulo => ({
+          ...capitulo,
+          escenas: escenasResponse.data.filter(escena => escena.escena.capitulo === capitulo.id)
+        }));
+        setCapitulos(capitulosConEscenas);
+
         const bloquesResponse = await axios.get(`http://localhost:8080/api/planes-de-rodaje/${proyectoId}/bloques`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -83,14 +94,13 @@ const PlanDeRodaje = ({ onClose }) => {
         animation: 150,
         sort: false,
         onEnd: (evt) => {
-          // Esto asegura que el elemento arrastrado vuelva a su posición original
           if (evt.from !== evt.to) {
             evt.from.appendChild(evt.item);
           }
         }
       });
     }
-  
+
     Object.keys(bloquesRefs.current).forEach((dia) => {
       if (bloquesRefs.current[dia]) {
         Sortable.create(bloquesRefs.current[dia], {
@@ -100,10 +110,10 @@ const PlanDeRodaje = ({ onClose }) => {
             const escenaId = evt.item.getAttribute('data-id');
             const dia = evt.to.getAttribute('data-dia');
             if (dia) {
-              const escena = escenas.find((e) => e.escena.id === parseInt(escenaId));
+              const escena = escenas.find((e) => e.id === parseInt(escenaId));
               const nuevoBloque = {
                 id: `nuevo-${new Date().getTime()}`,
-                escena: escena.escena,
+                escena,
                 fecha: dia,
                 hora: new Date(),
                 titulo: '',
@@ -121,7 +131,6 @@ const PlanDeRodaje = ({ onClose }) => {
       }
     });
   }, [proyectoId, navigate, escenas, bloques]);
-  
 
   const handleFiltroChange = (e) => {
     setFiltro(e.target.value);
@@ -145,10 +154,7 @@ const PlanDeRodaje = ({ onClose }) => {
       };
     }
 
-    console.log('Datos del bloque:', bloqueData);
-
     try {
-      console.log('Enviando solicitud PUT para actualizar bloque');
       await axios.put('http://localhost:8080/api/bloques/actualizar', [bloqueData], {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -159,15 +165,13 @@ const PlanDeRodaje = ({ onClose }) => {
     }
   };
 
-
   const handleGuardarTodosBloques = async () => {
     const token = localStorage.getItem('token');
     const bloquesAGuardar = Object.values(bloques).flatMap((bloquesPorDia) =>
       bloquesPorDia.map(formatearBloque)
     );
-  
+
     try {
-      console.log('Enviando solicitud PUT para actualizar bloques');
       await axios.put('http://localhost:8080/api/bloques/actualizar', bloquesAGuardar, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -179,26 +183,20 @@ const PlanDeRodaje = ({ onClose }) => {
   };
 
   const formatearBloque = (bloque) => {
-  const bloqueFormateado = {
-    planDeRodaje: {
-      id: proyectoId,
-    },
-    titulo: bloque.titulo !== undefined ? bloque.titulo : null,
-    fecha: dayjs(bloque.fecha).isValid() ? dayjs(bloque.fecha).format('YYYY-MM-DD') : '',
-    posicion: bloque.posicion,
-    escena: bloque.escena?.id ? { id: bloque.escena.id } : null,
-    id: bloque.id || null,
-    hora: bloque.hora ? `${bloque.hora.getHours().toString().padStart(2, '0')}:${bloque.hora.getMinutes().toString().padStart(2, '0')}` : null,
+    const bloqueFormateado = {
+      planDeRodaje: {
+        id: proyectoId,
+      },
+      titulo: bloque.titulo !== undefined ? bloque.titulo : null,
+      fecha: dayjs(bloque.fecha).isValid() ? dayjs(bloque.fecha).format('YYYY-MM-DD') : '',
+      posicion: bloque.posicion,
+      escena: bloque.escena?.id ? { id: bloque.escena.id } : null,
+      id: bloque.id || null,
+      hora: bloque.hora ? `${bloque.hora.getHours().toString().padStart(2, '0')}:${bloque.hora.getMinutes().toString().padStart(2, '0')}` : null,
+    };
+
+    return bloqueFormateado;
   };
-
-  return bloqueFormateado;
-};
-
-
-  
-  
-
-
 
   const handleEliminarBloque = async (id, dia) => {
     try {
@@ -206,7 +204,6 @@ const PlanDeRodaje = ({ onClose }) => {
       await axios.delete(`http://localhost:8080/api/bloques/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // Eliminar el bloque del estado local
       setBloques((prevBloques) => {
         const nuevoBloques = { ...prevBloques };
         nuevoBloques[dia] = prevBloques[dia].filter((bloque) => bloque.id !== id);
@@ -216,42 +213,37 @@ const PlanDeRodaje = ({ onClose }) => {
     } catch (error) {
       console.error('Error al eliminar el bloque:', error);
       alert('Error al eliminar el bloque');
-    } 
+    }
   };
-  
-
- 
 
   const handleDrop = (e, dia, indexDestino) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const bloqueData = JSON.parse(e.dataTransfer.getData('bloqueData'));
-  const { escena, fecha, hora } = bloqueData;
+    const bloqueData = JSON.parse(e.dataTransfer.getData('bloqueData'));
+    const { escena, fecha, hora } = bloqueData;
 
-  if (escena) {
-    const nuevoBloque = {
-      escena: { ...escena },
-      fecha: new Date(),
-      hora: new Date(),
-      titulo: '',
-      posicion: bloques[dia]?.length + 1 || 1,
-    };
+    if (escena) {
+      const nuevoBloque = {
+        escena: { ...escena },
+        fecha: new Date(),
+        hora: new Date(),
+        titulo: '',
+        posicion: bloques[dia]?.length + 1 || 1,
+      };
 
-    setBloques((prevBloques) => {
-      const nuevoBloques = { ...prevBloques };
-      if (indexDestino !== undefined) {
-        nuevoBloques[dia].splice(indexDestino, 0, nuevoBloque);
-      } else {
-        nuevoBloques[dia] = [...(nuevoBloques[dia] || []), nuevoBloque];
-      }
-      return nuevoBloques;
-    });
-  }
+      setBloques((prevBloques) => {
+        const nuevoBloques = { ...prevBloques };
+        if (indexDestino !== undefined) {
+          nuevoBloques[dia].splice(indexDestino, 0, nuevoBloque);
+        } else {
+          nuevoBloques[dia] = [...(nuevoBloques[dia] || []), nuevoBloque];
+        }
+        return nuevoBloques;
+      });
+    }
 
-  setDraggedItem(null);
-};
-
-  
+    setDraggedItem(null);
+  };
 
   const handleDragStart = (e) => {
     setDraggedItem(e.item);
@@ -275,7 +267,12 @@ const PlanDeRodaje = ({ onClose }) => {
     setInteriorExteriorFiltro(e.target.value);
   };
 
-  const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro);
+  const generarPDF = () => {
+    const elemento = document.querySelector('.plan-de-rodaje'); // Selecciona el elemento a convertir en PDF
+    html2pdf().from(elemento).save();
+  };
+    const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro);
+
 
   if (loading) {
     return <div>Cargando...</div>;
@@ -293,10 +290,7 @@ const PlanDeRodaje = ({ onClose }) => {
         </div>
         <h1 className="titulo-proyecto">{proyecto.titulo}</h1>
       </div>
-      
-      <div className="plan-de-rodaje-body">
-        <div className="escenas-container">
-        <div className="plan-de-rodaje-controles">
+      <div className="plan-de-rodaje-controles">
         <div className="plan-de-rodaje-filtros">
           <input
             type="text"
@@ -316,27 +310,30 @@ const PlanDeRodaje = ({ onClose }) => {
           </select>
         </div>
       </div>
-          <h3>Escenas</h3>
+      <div className="plan-de-rodaje-body">
+      {capitulos.map(capitulo => (
+        <div key={capitulo.id} className="escenas-container">
+          <h3>{"Capitulo: " + capitulo.nombre_capitulo}</h3>
           <ul ref={escenasRef}>
-            {escenasFiltradas.map((escenaObj) => (
+            {escenasFiltradas.filter(escenaObj => escenaObj.escena.capitulo === capitulo.id).map(escenaObj => (
               <li
                 key={escenaObj.escena.id}
                 className="escena-item"
                 data-id={escenaObj.escena.id}
                 draggable // Habilitar la capacidad de arrastre
                 onDragStart={(e) => {
-                  // Establecer los datos del bloque en los datos de transferencia
                   const bloqueData = JSON.stringify(escenaObj);
                   e.dataTransfer.setData('bloqueData', bloqueData);
-                  // Establecer el elemento arrastrado en el estado
                   setDraggedItem(escenaObj);
                 }}
               >
-                <span>{escenaObj.escena.capitulo || 'Sin título'}</span>
+                <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
+                <span>{escenaObj.escena.resumen}</span>
               </li>
             ))}
           </ul>
         </div>
+      ))}
         {Object.keys(bloques).map((dia) => (
           <div
             key={`dia-${dia}`}
@@ -360,11 +357,9 @@ const PlanDeRodaje = ({ onClose }) => {
         ))}
       </div>
       <button onClick={handleGuardarTodosBloques}>Guardar Bloques</button>
+      <button onClick={generarPDF}>Descargar PDF</button>
     </div>
   );
-  
 };
 
 export default PlanDeRodaje;
-
-
