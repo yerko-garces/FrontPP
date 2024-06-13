@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import Sortable from 'sortablejs';
 import '../Assets/PlanDeRodaje.css';
 import DiaDeRodaje from './DiaDeRodaje';
-import html2pdf from 'html2pdf.js'; // Importación de html2pdf.js
+import html2pdf from 'html2pdf.js';
 
 const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter) => {
   return items.filter(item => {
@@ -31,7 +31,6 @@ const PlanDeRodaje = ({ onClose }) => {
   const [bloques, setBloques] = useState({});
   const [escenas, setEscenas] = useState([]);
   const [loading, setLoading] = useState(true);
-  const escenasRef = useRef(null);
   const bloquesRefs = useRef({});
   const [draggedItem, setDraggedItem] = useState(null);
   const [proyecto, setProyecto] = useState(null);
@@ -84,22 +83,25 @@ const PlanDeRodaje = ({ onClose }) => {
   }, [proyectoId, navigate]);
 
   useEffect(() => {
-    if (escenasRef.current) {
-      Sortable.create(escenasRef.current, {
-        group: {
-          name: 'shared',
-          pull: 'clone',
-          put: false
-        },
-        animation: 150,
-        sort: false,
-        onEnd: (evt) => {
-          if (evt.from !== evt.to) {
-            evt.from.appendChild(evt.item);
+    capitulos.forEach(capitulo => {
+      const escenasContainer = document.getElementById(`escenas-container-${capitulo.id}`);
+      if (escenasContainer) {
+        Sortable.create(escenasContainer, {
+          group: {
+            name: 'shared',
+            pull: 'clone',
+            put: false
+          },
+          animation: 150,
+          sort: false,
+          onEnd: (evt) => {
+            if (evt.from !== evt.to) {
+              evt.from.appendChild(evt.item);
+            }
           }
-        }
-      });
-    }
+        });
+      }
+    });
 
     Object.keys(bloquesRefs.current).forEach((dia) => {
       if (bloquesRefs.current[dia]) {
@@ -130,7 +132,7 @@ const PlanDeRodaje = ({ onClose }) => {
         });
       }
     });
-  }, [proyectoId, navigate, escenas, bloques]);
+  }, [proyectoId, navigate, escenas, bloques, capitulos]);
 
   const handleFiltroChange = (e) => {
     setFiltro(e.target.value);
@@ -268,11 +270,11 @@ const PlanDeRodaje = ({ onClose }) => {
   };
 
   const generarPDF = () => {
-    const elemento = document.querySelector('.plan-de-rodaje'); // Selecciona el elemento a convertir en PDF
+    const elemento = document.querySelector('.plan-de-rodaje');
     html2pdf().from(elemento).save();
   };
-    const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro);
 
+  const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro);
 
   if (loading) {
     return <div>Cargando...</div>;
@@ -311,29 +313,29 @@ const PlanDeRodaje = ({ onClose }) => {
         </div>
       </div>
       <div className="plan-de-rodaje-body">
-      {capitulos.map(capitulo => (
-        <div key={capitulo.id} className="escenas-container">
-          <h3>{"Capitulo: " + capitulo.nombre_capitulo}</h3>
-          <ul ref={escenasRef}>
-            {escenasFiltradas.filter(escenaObj => escenaObj.escena.capitulo === capitulo.id).map(escenaObj => (
-              <li
-                key={escenaObj.escena.id}
-                className="escena-item"
-                data-id={escenaObj.escena.id}
-                draggable // Habilitar la capacidad de arrastre
-                onDragStart={(e) => {
-                  const bloqueData = JSON.stringify(escenaObj);
-                  e.dataTransfer.setData('bloqueData', bloqueData);
-                  setDraggedItem(escenaObj);
-                }}
-              >
-                <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
-                <span>{escenaObj.escena.resumen}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
+        {capitulos.map(capitulo => (
+          <div key={capitulo.id} className="escenas-container" id={`escenas-container-${capitulo.id}`}>
+            <h3>{"Capitulo: " + capitulo.nombre_capitulo}</h3>
+            <ul>
+              {escenasFiltradas.filter(escenaObj => escenaObj.escena.capitulo === capitulo.id).map(escenaObj => (
+                <li
+                  key={escenaObj.escena.id}
+                  className="escena-item"
+                  data-id={escenaObj.escena.id}
+                  draggable
+                  onDragStart={(e) => {
+                    const bloqueData = JSON.stringify(escenaObj);
+                    e.dataTransfer.setData('bloqueData', bloqueData);
+                    setDraggedItem(escenaObj);
+                  }}
+                >
+                  <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
+                  <span>{escenaObj.escena.resumen}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
         {Object.keys(bloques).map((dia) => (
           <div
             key={`dia-${dia}`}
