@@ -7,7 +7,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 const DiaDeRodaje = ({ bloque, handleEliminarBloque, handleGuardarBloque, dia, actualizarBloque }) => {
   const [titulo, setTitulo] = useState(bloque.titulo || '');
   const [fecha, setFecha] = useState(dayjs(bloque.fecha).isValid() ? dayjs(bloque.fecha).toDate() : new Date());
-  const [hora, setHora] = useState(bloque.hora || '');
+  const [hora, setHora] = useState(bloque.hora ? new Date(bloque.hora) : null);
 
   useEffect(() => {
     if (typeof bloque.hora === 'string') {

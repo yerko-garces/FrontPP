@@ -116,8 +116,8 @@ const PlanDeRodaje = ({ onClose }) => {
               const nuevoBloque = {
                 id: `nuevo-${new Date().getTime()}`,
                 escena,
-                fecha: dia,
-                hora: new Date(),
+                fecha: new Date(dia), // Crear una nueva instancia de Date para fecha
+                hora: new Date(), // Crear una nueva instancia de Date para hora
                 titulo: '',
                 posicion: bloques[dia]?.length + 1 || 1,
               };
@@ -185,6 +185,17 @@ const PlanDeRodaje = ({ onClose }) => {
   };
 
   const formatearBloque = (bloque) => {
+    let horaDate;
+    if (typeof bloque.hora === 'string') {
+      // Si bloque.hora es una cadena de texto, convertirla a un objeto Date
+      const [horas, minutos] = bloque.hora.split(':');
+      horaDate = new Date();
+      horaDate.setHours(parseInt(horas, 10));
+      horaDate.setMinutes(parseInt(minutos, 10));
+    } else {
+      horaDate = bloque.hora;
+    }
+  
     const bloqueFormateado = {
       planDeRodaje: {
         id: proyectoId,
@@ -194,9 +205,9 @@ const PlanDeRodaje = ({ onClose }) => {
       posicion: bloque.posicion,
       escena: bloque.escena?.id ? { id: bloque.escena.id } : null,
       id: bloque.id || null,
-      hora: bloque.hora ? `${bloque.hora.getHours().toString().padStart(2, '0')}:${bloque.hora.getMinutes().toString().padStart(2, '0')}` : null,
+      hora: horaDate ? `${horaDate.getHours().toString().padStart(2, '0')}:${horaDate.getMinutes().toString().padStart(2, '0')}` : null,
     };
-
+  
     return bloqueFormateado;
   };
 
@@ -255,7 +266,7 @@ const PlanDeRodaje = ({ onClose }) => {
     setBloques((prevBloques) => {
       const nuevoBloques = { ...prevBloques };
       nuevoBloques[dia] = prevBloques[dia].map((bloque) =>
-        bloque.id === bloqueActualizado.id ? bloqueActualizado : bloque
+        bloque.id === bloqueActualizado.id ? { ...bloqueActualizado } : bloque
       );
       return nuevoBloques;
     });
