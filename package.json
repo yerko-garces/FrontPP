@@ -16,6 +16,7 @@
     "react-scripts": "5.0.1",
     "react-sortablejs": "^6.1.4",
     "react-time-picker": "^7.0.0",
+    "sortable": "^2.0.0",
     "sortablejs": "^1.15.2",
     "web-vitals": "^2.1.4"
   },

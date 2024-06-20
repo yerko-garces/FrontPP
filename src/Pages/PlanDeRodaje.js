@@ -24,7 +24,7 @@ const PlanDeRodaje = ({ onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { proyectoId } = location.state || {};
-
+  const [capituloActivo, setCapituloActivo] = useState(null);
   const [filtro, setFiltro] = useState('');
   const [diaNocheFiltro, setDiaNocheFiltro] = useState('');
   const [interiorExteriorFiltro, setInteriorExteriorFiltro] = useState('');
@@ -324,29 +324,43 @@ const PlanDeRodaje = ({ onClose }) => {
         </div>
       </div>
       <div className="plan-de-rodaje-body">
+      <div className="escenas-container">
         {capitulos.map(capitulo => (
-          <div key={capitulo.id} className="escenas-container" id={`escenas-container-${capitulo.id}`}>
-            <h3>{"Capitulo: " + capitulo.nombre_capitulo}</h3>
-            <ul>
-              {escenasFiltradas.filter(escenaObj => escenaObj.escena.capitulo === capitulo.id).map(escenaObj => (
-                <li
-                  key={escenaObj.escena.id}
-                  className="escena-item"
-                  data-id={escenaObj.escena.id}
-                  draggable
-                  onDragStart={(e) => {
-                    const bloqueData = JSON.stringify(escenaObj);
-                    e.dataTransfer.setData('bloqueData', bloqueData);
-                    setDraggedItem(escenaObj);
-                  }}
-                >
-                  <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
-                  <span>{escenaObj.escena.resumen}</span>
-                </li>
-              ))}
-            </ul>
+          <div key={capitulo.id} className="capitulo-container">
+            <button
+              className="capitulo-button"
+              onClick={() => setCapituloActivo(capitulo.id === capituloActivo ? null : capitulo.id)}
+              aria-expanded={capitulo.id === capituloActivo}
+             
+            >
+              {"Capitulo: " + capitulo.nombre_capitulo}
+            </button>
+            {capitulo.id === capituloActivo && (
+              <div id={`escenas-container-${capitulo.id}`} className="escenas-list-container">
+                <ul>
+                  {escenasFiltradas.filter(escenaObj => escenaObj.escena.capitulo === capitulo.id).map(escenaObj => (
+                    <li
+                      key={escenaObj.escena.id}
+                      className="escena-item"
+                      data-id={escenaObj.escena.id}
+                      draggable
+                      onDragStart={(e) => {
+                        const bloqueData = JSON.stringify(escenaObj);
+                        e.dataTransfer.setData('bloqueData', bloqueData);
+                        setDraggedItem(escenaObj);
+                      }}
+                    >
+                      <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
+                      <span>{escenaObj.escena.resumen}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         ))}
+      </div>
+      <div className="dias-de-rodaje-container">
         {Object.keys(bloques).map((dia) => (
           <div
             key={`dia-${dia}`}
@@ -369,6 +383,8 @@ const PlanDeRodaje = ({ onClose }) => {
           </div>
         ))}
       </div>
+    </div>
+  
       <button onClick={handleGuardarTodosBloques}>Guardar Bloques</button>
       <button onClick={generarPDF}>Descargar PDF</button>
     </div>

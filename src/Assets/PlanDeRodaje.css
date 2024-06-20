@@ -11,6 +11,16 @@
   display: inline-block;
   margin-right: 10px; /* Ajusta según sea necesario */
 }
+.capitulo-button {
+  background-color: #bb7cee;
+  color: white;
+  border: none;
+  padding: 10px;
+  margin-bottom: 5px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%; /* Asegura que todos los botones tengan el mismo ancho */
+}
 
 .btn-dashboard-container {
   position: absolute;
