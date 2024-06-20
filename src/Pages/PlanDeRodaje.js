@@ -113,6 +113,10 @@ const PlanDeRodaje = ({ onClose }) => {
             const dia = evt.to.getAttribute('data-dia');
             if (dia) {
               const escena = escenas.find((e) => e.id === parseInt(escenaId));
+              if (!escena) {
+                alert('El elemento arrastrado no es una escena válida');
+                return;
+              }
               const nuevoBloque = {
                 id: `nuevo-${new Date().getTime()}`,
                 escena,
@@ -232,28 +236,38 @@ const PlanDeRodaje = ({ onClose }) => {
   const handleDrop = (e, dia, indexDestino) => {
     e.preventDefault();
 
-    const bloqueData = JSON.parse(e.dataTransfer.getData('bloqueData'));
+    let bloqueData;
+    try {
+      bloqueData = JSON.parse(e.dataTransfer.getData('bloqueData'));
+    } catch (error) {
+      alert('El elemento arrastrado no es válido');
+      return;
+    }
+
     const { escena, fecha, hora } = bloqueData;
 
-    if (escena) {
-      const nuevoBloque = {
-        escena: { ...escena },
-        fecha: new Date(),
-        hora: new Date(),
-        titulo: '',
-        posicion: bloques[dia]?.length + 1 || 1,
-      };
-
-      setBloques((prevBloques) => {
-        const nuevoBloques = { ...prevBloques };
-        if (indexDestino !== undefined) {
-          nuevoBloques[dia].splice(indexDestino, 0, nuevoBloque);
-        } else {
-          nuevoBloques[dia] = [...(nuevoBloques[dia] || []), nuevoBloque];
-        }
-        return nuevoBloques;
-      });
+    if (!escena) {
+      alert('El elemento arrastrado no es una escena válida');
+      return;
     }
+
+    const nuevoBloque = {
+      escena: { ...escena },
+      fecha: new Date(),
+      hora: new Date(),
+      titulo: '',
+      posicion: bloques[dia]?.length + 1 || 1,
+    };
+
+    setBloques((prevBloques) => {
+      const nuevoBloques = { ...prevBloques };
+      if (indexDestino !== undefined) {
+        nuevoBloques[dia].splice(indexDestino, 0, nuevoBloque);
+      } else {
+        nuevoBloques[dia] = [...(nuevoBloques[dia] || []), nuevoBloque];
+      }
+      return nuevoBloques;
+    });
 
     setDraggedItem(null);
   };
@@ -302,9 +316,10 @@ const PlanDeRodaje = ({ onClose }) => {
     };
 
   return (
-    <div className="plan-de-rodaje" onDrop={(e) => handleDrop(e, 'Sin Fecha', undefined)}>
+    <div className="plan-de-rodaje" onDrop={(e) => handleDrop(e, 'Sin Fecha', undefined)} onDragOver={(e) => e.preventDefault()}>
       <div className="plan-de-rodaje-header">
         <div className="btn-dashboard-container">
+        <button onClick={generarPDF}>Descargar PDF</button>
           <Link to="/dashboard">
             <button className="btn-dashboard">
               <i className="fas fa-film"></i> Volver a proyectos
@@ -313,6 +328,8 @@ const PlanDeRodaje = ({ onClose }) => {
         </div>
         <h1 className="titulo-proyecto">{proyecto.titulo}</h1>
       </div>
+      <div className="plan-de-rodaje-body">
+      <div className="escenas-container">
       <div className="plan-de-rodaje-controles">
         <div className="plan-de-rodaje-filtros">
           <input
@@ -333,8 +350,6 @@ const PlanDeRodaje = ({ onClose }) => {
           </select>
         </div>
       </div>
-      <div className="plan-de-rodaje-body">
-      <div className="escenas-container">
         {capitulos.map(capitulo => (
           <div key={capitulo.id} className="capitulo-container">
             <button
@@ -371,12 +386,17 @@ const PlanDeRodaje = ({ onClose }) => {
         ))}
       </div>
       <div className="dias-de-rodaje-container">
+      <button className="guardar-btn" onClick={handleGuardarTodosBloques}>
+        Guardar Bloques
+      </button>
         {Object.keys(bloques).map((dia) => (
           <div
             key={`dia-${dia}`}
             className="dias-de-rodaje"
             data-dia={dia}
             ref={(el) => (bloquesRefs.current[dia] = el)}
+            onDrop={(e) => handleDrop(e, dia)}
+            onDragOver={(e) => e.preventDefault()}
           >
             <h4>{dia}</h4>
             {bloques[dia].map((bloque) => (
@@ -394,11 +414,9 @@ const PlanDeRodaje = ({ onClose }) => {
         ))}
       </div>
     </div>
-  
-      <button onClick={handleGuardarTodosBloques}>Guardar Bloques</button>
-      <button onClick={generarPDF}>Descargar PDF</button>
     </div>
   );
 };
 
 export default PlanDeRodaje;
+

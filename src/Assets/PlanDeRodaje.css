@@ -10,7 +10,7 @@
 }
 
 .capitulo-button {
-  background-color: #bb7cee;
+  background-color: #000000;
   color: white;
   border: none;
   padding: 10px;
@@ -130,6 +130,33 @@
 .escena-list .escena-item,
 .bloque-list .bloque-item {
   cursor: grab;
+}
+.eliminar-btn {
+  background-color: #ff4d4d; /* Color de fondo rojo */
+  color: white; /* Color del texto blanco */
+  border: none; /* Sin borde */
+  padding: 10px 20px; /* Relleno del botón */
+  cursor: pointer; /* Cambia el cursor al pasar sobre el botón */
+  border-radius: 5px; /* Bordes redondeados */
+  transition: background-color 0.3s; /* Transición para el cambio de color */
+}
+
+.eliminar-btn:hover {
+  background-color: #cc0000; /* Color de fondo al pasar el ratón por encima */
+}
+.guardar-btn {
+  background-color: #4caf50; /* Color de fondo verde */
+  color: white; /* Color del texto blanco */
+  border: none; /* Sin borde */
+  padding: 10px 20px; /* Relleno del botón */
+  cursor: pointer; /* Cambia el cursor al pasar sobre el botón */
+  border-radius: 5px; /* Bordes redondeados */
+  transition: background-color 0.3s; /* Transición para el cambio de color */
+  width: 100%; /* Ancho del 100% */
+}
+
+.guardar-btn:hover {
+  background-color: #45a049; /* Color de fondo al pasar el ratón por encima */
 }
 
 

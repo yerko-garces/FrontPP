@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-
+import '../Assets/PlanDeRodaje.css';
 
 const DiaDeRodaje = ({ bloque, handleEliminarBloque, handleGuardarBloque, dia, actualizarBloque }) => {
   const [titulo, setTitulo] = useState(bloque.titulo || '');
