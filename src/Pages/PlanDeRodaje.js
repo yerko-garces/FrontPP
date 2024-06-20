@@ -24,7 +24,7 @@ const PlanDeRodaje = ({ onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { proyectoId } = location.state || {};
-  const [capituloActivo, setCapituloActivo] = useState(null);
+  const [capitulosActivos, setCapitulosActivos] = useState(new Set());
   const [filtro, setFiltro] = useState('');
   const [diaNocheFiltro, setDiaNocheFiltro] = useState('');
   const [interiorExteriorFiltro, setInteriorExteriorFiltro] = useState('');
@@ -290,6 +290,16 @@ const PlanDeRodaje = ({ onClose }) => {
   if (loading) {
     return <div>Cargando...</div>;
   }
+    // Función para alternar la activación/desactivación de un capítulo
+    const toggleCapituloActivo = (capituloId) => {
+      const newSet = new Set(capitulosActivos);
+      if (newSet.has(capituloId)) {
+        newSet.delete(capituloId);
+      } else {
+        newSet.add(capituloId);
+      }
+      setCapitulosActivos(newSet);
+    };
 
   return (
     <div className="plan-de-rodaje" onDrop={(e) => handleDrop(e, 'Sin Fecha', undefined)}>
@@ -329,13 +339,13 @@ const PlanDeRodaje = ({ onClose }) => {
           <div key={capitulo.id} className="capitulo-container">
             <button
               className="capitulo-button"
-              onClick={() => setCapituloActivo(capitulo.id === capituloActivo ? null : capitulo.id)}
-              aria-expanded={capitulo.id === capituloActivo}
-             
+              onClick={() => toggleCapituloActivo(capitulo.id)}
+              aria-expanded={capitulosActivos.has(capitulo.id)}
+              style={{ width: '100%' }}
             >
               {"Capitulo: " + capitulo.nombre_capitulo}
             </button>
-            {capitulo.id === capituloActivo && (
+            {capitulosActivos.has(capitulo.id) && (
               <div id={`escenas-container-${capitulo.id}`} className="escenas-list-container">
                 <ul>
                   {escenasFiltradas.filter(escenaObj => escenaObj.escena.capitulo === capitulo.id).map(escenaObj => (
