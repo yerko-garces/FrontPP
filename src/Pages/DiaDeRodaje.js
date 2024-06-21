@@ -2,38 +2,36 @@ import React, { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import '../Assets/PlanDeRodaje.css';
 
-const DiaDeRodaje = ({ bloque, handleEliminarBloque, handleGuardarBloque, dia, actualizarBloque }) => {
+const DiaDeRodaje = ({
+  bloque,
+  handleEliminarBloque,
+  dia,
+  onTituloChange,
+  onFechaChange,
+  onHoraChange,
+}) => {
   const [titulo, setTitulo] = useState(bloque.titulo || '');
   const [fecha, setFecha] = useState(dayjs(bloque.fecha).isValid() ? dayjs(bloque.fecha).toDate() : new Date());
-  const [hora, setHora] = useState(bloque.hora ? new Date(bloque.hora) : null);
+  const [hora, setHora] = useState(bloque.hora || '');
 
-  useEffect(() => {
-    if (typeof bloque.hora === 'string') {
-      setHora(bloque.hora);
-    }
-  }, [bloque.hora]);
+  const handleEliminar = () => {
+    handleEliminarBloque(bloque.id, dia);
+  };
 
   const handleTituloChange = (e) => {
-    const newTitulo = e.target.value;
-    setTitulo(newTitulo);
-    actualizarBloque({ ...bloque, titulo: newTitulo }, dia);
+    setTitulo(e.target.value);
+    onTituloChange(bloque.id, e.target.value);
   };
 
   const handleFechaChange = (date) => {
     setFecha(date);
-    actualizarBloque({ ...bloque, fecha: date }, dia);
+    onFechaChange(bloque.id, date);
   };
 
   const handleHoraChange = (e) => {
-    const newHora = e.target.value;
-    setHora(newHora);
-    actualizarBloque({ ...bloque, hora: newHora }, dia);
-  };
-
-  const handleEliminar = () => {
-    handleEliminarBloque(bloque.id, dia);
+    setHora(e.target.value);
+    onHoraChange(bloque.id, e.target.value);
   };
 
   return (

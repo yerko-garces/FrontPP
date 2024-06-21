@@ -142,41 +142,23 @@ const PlanDeRodaje = ({ onClose }) => {
     setFiltro(e.target.value);
   };
 
-  const handleGuardarBloque = async (bloqueActualizado) => {
-    const token = localStorage.getItem('token');
-    const bloqueData = {
-      planDeRodaje: {
-        id: proyectoId,
-      },
-      titulo: bloqueActualizado.titulo,
-      fecha: dayjs(bloqueActualizado.fecha).format('YYYY-MM-DD'),
-      hora: dayjs(bloqueActualizado.hora).format('HH:mm:ss'),
-      posicion: bloqueActualizado.posicion,
-    };
-
-    if (bloqueActualizado.escena?.id) {
-      bloqueData.escena = {
-        id: bloqueActualizado.escena.id,
-      };
-    }
-
-    try {
-      await axios.put('http://localhost:8080/api/bloques/actualizar', [bloqueData], {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      alert('Bloque guardado correctamente');
-    } catch (error) {
-      console.error('Error al guardar el bloque:', error);
-      alert('Error al guardar el bloque');
-    }
-  };
 
   const handleGuardarTodosBloques = async () => {
     const token = localStorage.getItem('token');
-    const bloquesAGuardar = Object.values(bloques).flatMap((bloquesPorDia) =>
-      bloquesPorDia.map(formatearBloque)
+    const bloquesAGuardar = Object.entries(bloques).flatMap(([dia, bloquesPorDia]) =>
+      bloquesPorDia.map((bloque) => {
+        const bloqueFormulario = bloqueFormularios[dia]
+          ? bloqueFormularios[dia][bloque.id] || {}
+          : {};
+        const titulo = bloqueFormulario.titulo !== undefined ? bloqueFormulario.titulo : bloque.titulo || '';
+        const fechaObj = bloqueFormulario.fecha !== undefined ? bloqueFormulario.fecha : bloque.fecha;
+        const horaObj = bloqueFormulario.hora !== undefined ? bloqueFormulario.hora : bloque.hora;
+        const fecha = fechaObj instanceof Date ? dayjs(fechaObj).format('YYYY-MM-DD') : fechaObj;
+        const hora = horaObj instanceof Date ? `${horaObj.getHours().toString().padStart(2, '0')}:${horaObj.getMinutes().toString().padStart(2, '0')}` : horaObj;
+        return formatearBloque({ ...bloque, titulo, fecha, hora });
+      })
     );
-
+  
     try {
       await axios.put('http://localhost:8080/api/bloques/actualizar', bloquesAGuardar, {
         headers: { Authorization: `Bearer ${token}` },
@@ -187,6 +169,7 @@ const PlanDeRodaje = ({ onClose }) => {
       alert('Error al guardar los bloques');
     }
   };
+
 
   const formatearBloque = (bloque) => {
     let horaDate;
@@ -299,6 +282,37 @@ const PlanDeRodaje = ({ onClose }) => {
     html2pdf().from(elemento).save();
   };
 
+
+  const [bloqueFormularios, setBloqueFormularios] = useState({});
+
+  const actualizarBloqueFormulario = (bloqueId, nuevoValor, campo, dia) => {
+    setBloqueFormularios((prevBloqueFormularios) => {
+      const nuevosBloqueFormularios = { ...prevBloqueFormularios };
+      const bloqueFormulario = nuevosBloqueFormularios[dia]
+        ? { ...nuevosBloqueFormularios[dia] }
+        : {};
+      const nuevoBloque = { ...bloqueFormulario[bloqueId] };
+      nuevoBloque[campo] = nuevoValor;
+      bloqueFormulario[bloqueId] = nuevoBloque;
+      nuevosBloqueFormularios[dia] = bloqueFormulario;
+      return nuevosBloqueFormularios;
+    });
+  };
+
+  const handleTituloChange = (bloqueId, nuevoTitulo, dia) => {
+    actualizarBloqueFormulario(bloqueId, nuevoTitulo, 'titulo', dia);
+  };
+
+  const handleFechaChange = (bloqueId, nuevaFecha, dia) => {
+    actualizarBloqueFormulario(bloqueId, nuevaFecha, 'fecha', dia);
+  };
+
+  const handleHoraChange = (bloqueId, nuevaHora, dia) => {
+    actualizarBloqueFormulario(bloqueId, nuevaHora, 'hora', dia);
+  };
+
+
+
   const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro);
 
   if (loading) {
@@ -402,12 +416,13 @@ const PlanDeRodaje = ({ onClose }) => {
             {bloques[dia].map((bloque) => (
               <div key={bloque.id} className="bloque-item">
                 <DiaDeRodaje
-                  bloque={bloque}
-                  handleEliminarBloque={handleEliminarBloque}
-                  handleGuardarBloque={handleGuardarBloque}
-                  dia={dia}
-                  actualizarBloque={actualizarBloque}
-                />
+  bloque={bloque}
+  handleEliminarBloque={handleEliminarBloque}
+  dia={dia}
+  onTituloChange={(bloqueId, nuevoTitulo) => handleTituloChange(bloqueId, nuevoTitulo, dia)}
+  onFechaChange={(bloqueId, nuevaFecha) => handleFechaChange(bloqueId, nuevaFecha, dia)}
+  onHoraChange={(bloqueId, nuevaHora) => handleHoraChange(bloqueId, nuevaHora, dia)}
+/>
               </div>
             ))}
           </div>
@@ -419,4 +434,3 @@ const PlanDeRodaje = ({ onClose }) => {
 };
 
 export default PlanDeRodaje;
-
