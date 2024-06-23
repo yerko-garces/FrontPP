@@ -90,7 +90,7 @@ const PlanDeRodaje = ({ onClose }) => {
           group: {
             name: 'shared',
             pull: 'clone',
-            put: false
+            put: false // No permitir que se suelten elementos en los contenedores de escenas
           },
           animation: 150,
           sort: false,
@@ -102,7 +102,7 @@ const PlanDeRodaje = ({ onClose }) => {
         });
       }
     });
-
+  
     Object.keys(bloquesRefs.current).forEach((dia) => {
       if (bloquesRefs.current[dia]) {
         Sortable.create(bloquesRefs.current[dia], {
@@ -120,8 +120,8 @@ const PlanDeRodaje = ({ onClose }) => {
               const nuevoBloque = {
                 id: `nuevo-${new Date().getTime()}`,
                 escena,
-                fecha: new Date(dia), // Crear una nueva instancia de Date para fecha
-                hora: new Date(), // Crear una nueva instancia de Date para hora
+                fecha: new Date(dia),
+                hora: new Date(),
                 titulo: '',
                 posicion: bloques[dia]?.length + 1 || 1,
               };
@@ -218,7 +218,7 @@ const PlanDeRodaje = ({ onClose }) => {
 
   const handleDrop = (e, dia, indexDestino) => {
     e.preventDefault();
-
+  
     let bloqueData;
     try {
       bloqueData = JSON.parse(e.dataTransfer.getData('bloqueData'));
@@ -226,14 +226,14 @@ const PlanDeRodaje = ({ onClose }) => {
       alert('El elemento arrastrado no es válido');
       return;
     }
-
+  
     const { escena, fecha, hora } = bloqueData;
-
+  
     if (!escena) {
       alert('El elemento arrastrado no es una escena válida');
       return;
     }
-
+  
     const nuevoBloque = {
       escena: { ...escena },
       fecha: new Date(),
@@ -241,7 +241,7 @@ const PlanDeRodaje = ({ onClose }) => {
       titulo: '',
       posicion: bloques[dia]?.length + 1 || 1,
     };
-
+  
     setBloques((prevBloques) => {
       const nuevoBloques = { ...prevBloques };
       if (indexDestino !== undefined) {
@@ -251,7 +251,7 @@ const PlanDeRodaje = ({ onClose }) => {
       }
       return nuevoBloques;
     });
-
+  
     setDraggedItem(null);
   };
 
@@ -329,108 +329,108 @@ const PlanDeRodaje = ({ onClose }) => {
       setCapitulosActivos(newSet);
     };
 
-  return (
-    <div className="plan-de-rodaje" onDrop={(e) => handleDrop(e, 'Sin Fecha', undefined)} onDragOver={(e) => e.preventDefault()}>
-      <div className="plan-de-rodaje-header">
-        <div className="btn-dashboard-container">
-        <button onClick={generarPDF}>Descargar PDF</button>
-          <Link to="/dashboard">
-            <button className="btn-dashboard">
-              <i className="fas fa-film"></i> Volver a proyectos
-            </button>
-          </Link>
-        </div>
-        <h1 className="titulo-proyecto">{proyecto.titulo}</h1>
-      </div>
-      <div className="plan-de-rodaje-body">
-      <div className="escenas-container">
-      <div className="plan-de-rodaje-controles">
-        <div className="plan-de-rodaje-filtros">
-          <input
-            type="text"
-            placeholder="Filtrar escenas por título"
-            value={filtro}
-            onChange={handleFiltroChange}
-          />
-          <select value={diaNocheFiltro} onChange={handleDiaNocheFiltroChange}>
-            <option value="">Dia-Noche</option>
-            <option value="DIA">Día</option>
-            <option value="NOCHE">Noche</option>
-          </select>
-          <select value={interiorExteriorFiltro} onChange={handleInteriorExteriorFiltroChange}>
-            <option value="">Interior-Exterior</option>
-            <option value="INTERIOR">Interior</option>
-            <option value="EXTERIOR">Exterior</option>
-          </select>
-        </div>
-      </div>
-        {capitulos.map(capitulo => (
-          <div key={capitulo.id} className="capitulo-container">
-            <button
-              className="capitulo-button"
-              onClick={() => toggleCapituloActivo(capitulo.id)}
-              aria-expanded={capitulosActivos.has(capitulo.id)}
-              style={{ width: '100%' }}
-            >
-              {"Capitulo: " + capitulo.nombre_capitulo}
-            </button>
-            {capitulosActivos.has(capitulo.id) && (
-              <div id={`escenas-container-${capitulo.id}`} className="escenas-list-container">
-                <ul>
-                  {escenasFiltradas.filter(escenaObj => escenaObj.escena.capitulo === capitulo.id).map(escenaObj => (
-                    <li
-                      key={escenaObj.escena.id}
-                      className="escena-item"
-                      data-id={escenaObj.escena.id}
-                      draggable
-                      onDragStart={(e) => {
-                        const bloqueData = JSON.stringify(escenaObj);
-                        e.dataTransfer.setData('bloqueData', bloqueData);
-                        setDraggedItem(escenaObj);
-                      }}
-                    >
-                      <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
-                      <span>{escenaObj.escena.resumen}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+    return (
+      <div className="plan-de-rodaje">
+        <div className="plan-de-rodaje-header">
+          <div className="btn-dashboard-container">
+            <button onClick={generarPDF}>Descargar PDF</button>
+            <Link to="/dashboard">
+              <button className="btn-dashboard">
+                <i className="fas fa-film"></i> Volver a proyectos
+              </button>
+            </Link>
           </div>
-        ))}
-      </div>
-      <div className="dias-de-rodaje-container">
-      <button className="guardar-btn" onClick={handleGuardarTodosBloques}>
-        Guardar Bloques
-      </button>
-        {Object.keys(bloques).map((dia) => (
-          <div
-            key={`dia-${dia}`}
-            className="dias-de-rodaje"
-            data-dia={dia}
-            ref={(el) => (bloquesRefs.current[dia] = el)}
-            onDrop={(e) => handleDrop(e, dia)}
-            onDragOver={(e) => e.preventDefault()}
-          >
-            <h4>{dia}</h4>
-            {bloques[dia].map((bloque) => (
-              <div key={bloque.id} className="bloque-item">
-                <DiaDeRodaje
-  bloque={bloque}
-  handleEliminarBloque={handleEliminarBloque}
-  dia={dia}
-  onTituloChange={(bloqueId, nuevoTitulo) => handleTituloChange(bloqueId, nuevoTitulo, dia)}
-  onFechaChange={(bloqueId, nuevaFecha) => handleFechaChange(bloqueId, nuevaFecha, dia)}
-  onHoraChange={(bloqueId, nuevaHora) => handleHoraChange(bloqueId, nuevaHora, dia)}
-/>
+          <h1 className="titulo-proyecto">{proyecto.titulo}</h1>
+        </div>
+        <div className="plan-de-rodaje-body">
+          <div className="escenas-container">
+            <div className="plan-de-rodaje-controles">
+              <div className="plan-de-rodaje-filtros">
+                <input
+                  type="text"
+                  placeholder="Filtrar escenas por título"
+                  value={filtro}
+                  onChange={handleFiltroChange}
+                />
+                <select value={diaNocheFiltro} onChange={handleDiaNocheFiltroChange}>
+                  <option value="">Dia-Noche</option>
+                  <option value="DIA">Día</option>
+                  <option value="NOCHE">Noche</option>
+                </select>
+                <select value={interiorExteriorFiltro} onChange={handleInteriorExteriorFiltroChange}>
+                  <option value="">Interior-Exterior</option>
+                  <option value="INTERIOR">Interior</option>
+                  <option value="EXTERIOR">Exterior</option>
+                </select>
+              </div>
+            </div>
+            {capitulos.map(capitulo => (
+              <div key={capitulo.id} className="capitulo-container">
+                <button
+                  className="capitulo-button"
+                  onClick={() => toggleCapituloActivo(capitulo.id)}
+                  aria-expanded={capitulosActivos.has(capitulo.id)}
+                  style={{ width: '100%' }}
+                >
+                  {"Capitulo: " + capitulo.nombre_capitulo}
+                </button>
+                {capitulosActivos.has(capitulo.id) && (
+                  <div id={`escenas-container-${capitulo.id}`} className="escenas-list-container">
+                    <ul>
+                      {escenasFiltradas.filter(escenaObj => escenaObj.escena.capitulo === capitulo.id).map(escenaObj => (
+                        <li
+                          key={escenaObj.escena.id}
+                          className="escena-item"
+                          data-id={escenaObj.escena.id}
+                          draggable
+                          onDragStart={(e) => {
+                            const bloqueData = JSON.stringify(escenaObj);
+                            e.dataTransfer.setData('bloqueData', bloqueData);
+                            setDraggedItem(escenaObj);
+                          }}
+                        >
+                          <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
+                          <span>{escenaObj.escena.resumen}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             ))}
           </div>
-        ))}
+          <div className="dias-de-rodaje-container">
+            <button className="guardar-btn" onClick={handleGuardarTodosBloques}>
+              Guardar Bloques
+            </button>
+            {Object.keys(bloques).map((dia) => (
+              <div
+                key={`dia-${dia}`}
+                className="dias-de-rodaje"
+                data-dia={dia}
+                ref={(el) => (bloquesRefs.current[dia] = el)}
+                onDrop={(e) => handleDrop(e, dia)}
+                onDragOver={(e) => e.preventDefault()}
+              >
+                <h4>{dia}</h4>
+                {bloques[dia].map((bloque) => (
+                  <div key={bloque.id} className="bloque-item">
+                    <DiaDeRodaje
+                      bloque={bloque}
+                      handleEliminarBloque={handleEliminarBloque}
+                      dia={dia}
+                      onTituloChange={(bloqueId, nuevoTitulo) => handleTituloChange(bloqueId, nuevoTitulo, dia)}
+                      onFechaChange={(bloqueId, nuevaFecha) => handleFechaChange(bloqueId, nuevaFecha, dia)}
+                      onHoraChange={(bloqueId, nuevaHora) => handleHoraChange(bloqueId, nuevaHora, dia)}
+                    />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
-    </div>
-  );
+    );
 };
 
 export default PlanDeRodaje;
