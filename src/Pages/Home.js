@@ -6,7 +6,7 @@ import '../Assets/Login.css';
 function Login() {
   const [nombre, setNombre] = useState('');
   const [contrasena, setContrasena] = useState('');
-  const [errorMessage, setErrorMessage] = useState(''); // Estado para el mensaje de error
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -25,6 +25,7 @@ function Login() {
 
       const token = response.data;
       localStorage.setItem('token', token);
+      
       navigate('/dashboard');
     } catch (error) {
       console.error(error);

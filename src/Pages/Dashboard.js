@@ -9,6 +9,7 @@ import LocacionForm from './LocacionForm';
 import ItemForm from './ItemForm';
 import EscenaDetails from './EscenaDetails';
 import PlanDeRodaje from './PlanDeRodaje';
+
 import '../Assets/Dashboard.css';
 
 function Dashboard() {
