@@ -120,6 +120,7 @@
 }
 
 .bloque-escena {
+  position: relative; /* Necesario para que el botón se posicione en relación a este contenedor */
   display: flex;
   align-items: center;
 }
@@ -138,12 +139,16 @@
   cursor: grab;
 }
 .eliminar-btn {
+  position: absolute; /* Posiciona el botón de forma absoluta dentro del contenedor */
+  top: 3px; /* Ajusta según sea necesario */
+  right: 20px; /* Ajusta según sea necesario */
   background-color: #ff4d4d; /* Color de fondo rojo */
   color: white; /* Color del texto blanco */
   border: none; /* Sin borde */
-  padding: 10px 20px; /* Relleno del botón */
+  padding: 5px 12px; /* Relleno del botón */
+  font-size: 15px;
   cursor: pointer; /* Cambia el cursor al pasar sobre el botón */
-  border-radius: 5px; /* Bordes redondeados */
+  border-radius: 25px; /* Bordes redondeados */
   transition: background-color 0.3s; /* Transición para el cambio de color */
 }
 

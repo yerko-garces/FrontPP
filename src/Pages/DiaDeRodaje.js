@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
 
 const DiaDeRodaje = ({
   bloque,
@@ -54,17 +56,22 @@ const DiaDeRodaje = ({
       />
       {bloque.escena ? (
         <div className="bloque-escena">
-          <span>Escena:</span>
+          <span>Escena: </span>
           <span>{bloque.escena.titulo_escena || 'Sin título'}</span>
           <span>Resumen:</span>
           <span>{bloque.escena.resumen || 'Sin título'}</span>
+          <button className="eliminar-btn" onClick={handleEliminar}>
+      <FontAwesomeIcon icon={faTrash} />
+   </button>
         </div>
       ) : (
         <div className="bloque-escena">
           <span>No hay escena asignada a este bloque</span>
+
         </div>
+        
       )}
-      <button className="eliminar-btn" onClick={handleEliminar}>Eliminar</button>
+      
     </div>
   );
 };
