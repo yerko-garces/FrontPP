@@ -399,7 +399,7 @@ const PlanDeRodaje = ({ onClose }) => {
               </div>
             ))}
           </div>
-          <div className="dias-de-rodaje-container">
+          <div className="dias-de-rodaje-container" onDrop={(e) => handleDrop(e, 'Sin Fecha', undefined)} onDragOver={(e) => e.preventDefault()}>
             <button className="guardar-btn" onClick={handleGuardarTodosBloques}>
               Guardar Bloques
             </button>
@@ -409,8 +409,7 @@ const PlanDeRodaje = ({ onClose }) => {
                 className="dias-de-rodaje"
                 data-dia={dia}
                 ref={(el) => (bloquesRefs.current[dia] = el)}
-                onDrop={(e) => handleDrop(e, dia)}
-                onDragOver={(e) => e.preventDefault()}
+
               >
                 <h4>{dia}</h4>
                 {bloques[dia].map((bloque) => (

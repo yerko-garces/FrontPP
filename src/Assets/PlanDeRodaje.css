@@ -58,6 +58,12 @@
   border-right: 1px solid #ccc;
   box-sizing: border-box;
 }
+.bloque-placeholder {
+  padding: 20px;
+  border: 2px dashed #ccc;
+  text-align: center;
+  color: #999;
+}
 
 .escena-item {
   background-color: #f2f2f2;
