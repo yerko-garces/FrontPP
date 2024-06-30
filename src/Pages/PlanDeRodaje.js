@@ -6,7 +6,8 @@ import { Link } from 'react-router-dom';
 import Sortable from 'sortablejs';
 import '../Assets/PlanDeRodaje.css';
 import DiaDeRodaje from './DiaDeRodaje';
-import html2pdf from 'html2pdf.js';
+import jsPDF from 'jspdf';
+import ItemForm from './ItemForm';
 
 const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter) => {
   return items.filter(item => {
@@ -356,8 +357,42 @@ const PlanDeRodaje = ({ onClose }) => {
   };
 
   const generarPDF = () => {
-    const elemento = document.querySelector('.plan-de-rodaje');
-    html2pdf().from(elemento).save();
+    const doc = new jsPDF();
+    
+    // Configurar el título
+    doc.setFontSize(18);
+    doc.text('Plan de Rodaje', 105, 20, { align: 'center' });
+    
+    // Agregar información del proyecto
+    doc.setFontSize(12);
+    doc.text(`Nombre del proyecto: ${proyecto.titulo}`, 20, 40);
+    doc.text(`Director: ${proyecto.director || 'No especificado'}`, 20, 50);
+    
+    // Agregar información de los bloques
+    let yPos = 70;
+    Object.entries(bloques).forEach(([dia, bloquesDia]) => {
+      doc.setFontSize(14);
+      doc.text(`Día: ${dia}`, 20, yPos);
+      yPos += 10;
+      
+      bloquesDia.forEach((bloque, index) => {
+        doc.setFontSize(10);
+        doc.text(`Bloque ${index + 1}: ${bloque.titulo || 'Sin título'}`, 30, yPos);
+        doc.text(`Escena: ${bloque.escena?.titulo_escena || 'Sin título'}`, 40, yPos + 5);
+        doc.text(`Hora: ${bloque.hora || 'No especificada'}`, 40, yPos + 10);
+        yPos += 20;
+        
+        if (yPos > 280) {  // Si estamos cerca del final de la página
+          doc.addPage();  // Agregar una nueva página
+          yPos = 20;  // Reiniciar la posición Y
+        }
+      });
+      
+      yPos += 10;  // Espacio entre días
+    });
+    
+    // Guardar el PDF
+    doc.save('plan_de_rodaje.pdf');
   };
 
 
@@ -409,17 +444,17 @@ const PlanDeRodaje = ({ onClose }) => {
 
     return (
       <div className="plan-de-rodaje">
-        <div className="plan-de-rodaje-header">
-          <div className="btn-dashboard-container">
-            <button onClick={generarPDF}>Descargar PDF</button>
-            <Link to="/dashboard">
-              <button className="btn-dashboard">
-                <i className="fas fa-film"></i> Volver a proyectos
-              </button>
-            </Link>
-          </div>
-          <h1 className="titulo-proyecto">{proyecto.titulo}</h1>
+      <div className="plan-de-rodaje-header">
+        <div className="btn-dashboard-container">
+          <button onClick={generarPDF}>Descargar PDF</button>
+          <Link to="/dashboard">
+            <button className="btn-dashboard">
+              <i className="fas fa-film"></i> Volver a proyectos
+            </button>
+          </Link>
         </div>
+        <h1 className="titulo-proyecto">{proyecto.titulo}</h1>
+      </div>
         <div className="plan-de-rodaje-body">
           <div className="escenas-container">
             <div className="plan-de-rodaje-controles">
