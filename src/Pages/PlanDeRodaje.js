@@ -9,15 +9,21 @@ import DiaDeRodaje from './DiaDeRodaje';
 import jsPDF from 'jspdf';
 import ItemForm from './ItemForm';
 
-const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter) => {
+const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter, personajeFilter) => {
   return items.filter(item => {
     const tituloEscena = item?.escena?.titulo_escena || '';
     const diaNoche = item?.escena?.diaNoche || '';
     const interiorExterior = item?.escena?.interiorExterior || '';
+    const personajes = item?.escena?.personajes || [];
+
     const matchesSearchText = tituloEscena.toLowerCase().includes(searchText.toLowerCase());
     const matchesDiaNoche = diaNocheFilter ? diaNoche === diaNocheFilter : true;
     const matchesInteriorExterior = interiorExteriorFilter ? interiorExterior === interiorExteriorFilter : true;
-    return matchesSearchText && matchesDiaNoche && matchesInteriorExterior;
+    
+    // Verificar si el personaje filtrado está presente en el array de personajes de la escena
+    const matchesPersonaje = personajeFilter ? personajes.some(personaje => personaje.id === parseInt(personajeFilter)) : true;
+
+    return matchesSearchText && matchesDiaNoche && matchesInteriorExterior && matchesPersonaje;
   });
 };
 
@@ -28,6 +34,7 @@ const PlanDeRodaje = ({ onClose }) => {
   const [capitulosActivos, setCapitulosActivos] = useState(new Set());
   const [filtro, setFiltro] = useState('');
   const [diaNocheFiltro, setDiaNocheFiltro] = useState('');
+  const [personajeFiltro, setPersonajeFiltro] = useState('');
   const [interiorExteriorFiltro, setInteriorExteriorFiltro] = useState('');
   const [bloques, setBloques] = useState({});
   const [escenas, setEscenas] = useState([]);
@@ -36,6 +43,7 @@ const PlanDeRodaje = ({ onClose }) => {
   const [draggedItem, setDraggedItem] = useState(null);
   const [proyecto, setProyecto] = useState(null);
   const [capitulos, setCapitulos] = useState([]);
+  const [personajes, setPersonajes] = useState([]);
   const [showInventario, setShowInventario] = useState(false);
   const [bodega, setBodega] = useState([]);
   const [showItemForm, setShowItemForm] = useState(false);
@@ -58,6 +66,10 @@ const PlanDeRodaje = ({ onClose }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         setProyecto(proyectoResponse.data);
+        const personajesResponse = await axios.get(`http://localhost:8080/api/personajes/proyecto/${proyectoId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setPersonajes(personajesResponse.data);
 
         const capitulosResponse = await axios.get(`http://localhost:8080/api/capitulos/${proyectoId}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -351,6 +363,9 @@ const PlanDeRodaje = ({ onClose }) => {
   const handleDiaNocheFiltroChange = (e) => {
     setDiaNocheFiltro(e.target.value);
   };
+  const handlePersonajeFiltroChange = (event) => {
+    setPersonajeFiltro(event.target.value);
+  };
 
   const handleInteriorExteriorFiltroChange = (e) => {
     setInteriorExteriorFiltro(e.target.value);
@@ -426,7 +441,7 @@ const PlanDeRodaje = ({ onClose }) => {
 
 
 
-  const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro);
+  const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro, personajeFiltro);
 
   if (loading) {
     return <div>Cargando...</div>;
@@ -444,18 +459,26 @@ const PlanDeRodaje = ({ onClose }) => {
 
     return (
       <div className="plan-de-rodaje">
-      <div className="plan-de-rodaje-header">
-        <div className="btn-dashboard-container">
-          <button onClick={generarPDF}>Descargar PDF</button>
-          <Link to="/dashboard">
-            <button className="btn-dashboard">
-              <i className="fas fa-film"></i> Volver a proyectos
-            </button>
-          </Link>
+        <div className="plan-de-rodaje-header">
+          <div className="btn-dashboard-container">
+            <button onClick={generarPDF}>Descargar PDF</button>
+            <Link to="/dashboard">
+              <button className="btn-dashboard">
+                <i className="fas fa-film"></i> Volver a proyectos
+              </button>
+            </Link>
+          </div>
+          <h1 className="titulo-proyecto">{proyecto.titulo}</h1>
         </div>
-        <h1 className="titulo-proyecto">{proyecto.titulo}</h1>
-      </div>
         <div className="plan-de-rodaje-body">
+          <div className="personajes-container">
+            <h2>Personajes</h2>
+            <ul>
+              {personajes.map(personaje => (
+                <li key={personaje.id}>{personaje.nombre}</li>
+              ))}
+            </ul>
+          </div>
           <div className="escenas-container">
             <div className="plan-de-rodaje-controles">
               <div className="plan-de-rodaje-filtros">
@@ -475,6 +498,13 @@ const PlanDeRodaje = ({ onClose }) => {
                   <option value="INTERIOR">Interior</option>
                   <option value="EXTERIOR">Exterior</option>
                 </select>
+                <select value={personajeFiltro} onChange={handlePersonajeFiltroChange}>
+            <option value="">Seleccionar Personaje</option>
+            {personajes.map(personaje => (
+              <option key={personaje.id} value={personaje.id}>{personaje.nombre}</option>
+            ))}
+          </select>
+
               </div>
             </div>
             {capitulos.map(capitulo => (
@@ -522,7 +552,6 @@ const PlanDeRodaje = ({ onClose }) => {
                 className="dias-de-rodaje"
                 data-dia={dia}
                 ref={(el) => (bloquesRefs.current[dia] = el)}
-
               >
                 <h4>{dia}</h4>
                 {bloques[dia].map((bloque) => (
@@ -540,104 +569,97 @@ const PlanDeRodaje = ({ onClose }) => {
               </div>
             ))}
           </div>
-
-
-
           <div className={`inventario-container ${showInventario ? 'visible' : ''}`}>
-          <button className="inventario-toggle" onClick={toggleInventario}>
-            <i className="fas fa-boxes"></i> Inventario
-          </button>
-          {showInventario && (
-            <div className={`inventario-window ${editingItem ? 'expanded' : ''}`}>
-              <h2>Inventario</h2>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Cantidad</th>
-                    <th>Categoría</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bodega.map((item) => (
-                    <tr key={item.id}>
-                      <td>
-                        {editingItem && editingItem.id === item.id ? (
-                          <input
-                            type="text"
-                            value={editingItem.nombre}
-                            onChange={(e) =>
-                              setEditingItem({ ...editingItem, nombre: e.target.value })
-                            }
-                          />
-                        ) : (
-                          item.nombre
-                        )}
-                      </td>
-                      <td>
-                        {editingItem && editingItem.id === item.id ? (
-                          <input
-                            type="number"
-                            value={editingItem.cantidad}
-                            onChange={(e) =>
-                              setEditingItem({ ...editingItem, cantidad: e.target.value })
-                            }
-                          />
-                        ) : (
-                          item.cantidad
-                        )}
-                      </td>
-                      <td>
-                        {editingItem && editingItem.id === item.id ? (
-                          <input
-                            type="text"
-                            value={editingItem.categoria}
-                            onChange={(e) =>
-                              setEditingItem({ ...editingItem, categoria: e.target.value })
-                            }
-                          />
-                        ) : (
-                          item.categoria
-                        )}
-                      </td>
-                      <td className="item-actions">
-                        {editingItem && editingItem.id === item.id ? (
-                          <>
-                            <button className="btn-confirm" onClick={() => handleItemEditConfirm(editingItem)}>
-                              <i className="fas fa-check"></i> Confirmar
-                            </button>
-                            <button className="btn-cancel" onClick={handleItemEditCancel}>
-                              <i className="fas fa-times"></i> Cancelar
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button className="btn-edit" onClick={() => handleItemEdit(item)}>
-                              <i className="fas fa-edit"></i> Editar
-                            </button>
-                            <button className="btn-delete" onClick={() => handleItemDelete(item.id)}>
-                              <i className="fas fa-trash"></i> Eliminar
-                            </button>
-                          </>
-                        )}
-                      </td>
+            <button className="inventario-toggle" onClick={toggleInventario}>
+              <i className="fas fa-boxes"></i> Inventario
+            </button>
+            {showInventario && (
+              <div className={`inventario-window ${editingItem ? 'expanded' : ''}`}>
+                <h2>Inventario</h2>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Cantidad</th>
+                      <th>Categoría</th>
+                      <th>Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              <button className="btn-create" onClick={() => setShowItemForm(true)}>Crear Item</button>
-              {showItemForm && <ItemForm onSubmit={handleItemSubmit} item={editingItem} />}
-            </div>
-          )}
-        </div>
-
-
-
-
+                  </thead>
+                  <tbody>
+                    {bodega.map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          {editingItem && editingItem.id === item.id ? (
+                            <input
+                              type="text"
+                              value={editingItem.nombre}
+                              onChange={(e) =>
+                                setEditingItem({ ...editingItem, nombre: e.target.value })
+                              }
+                            />
+                          ) : (
+                            item.nombre
+                          )}
+                        </td>
+                        <td>
+                          {editingItem && editingItem.id === item.id ? (
+                            <input
+                              type="number"
+                              value={editingItem.cantidad}
+                              onChange={(e) =>
+                                setEditingItem({ ...editingItem, cantidad: e.target.value })
+                              }
+                            />
+                          ) : (
+                            item.cantidad
+                          )}
+                        </td>
+                        <td>
+                          {editingItem && editingItem.id === item.id ? (
+                            <input
+                              type="text"
+                              value={editingItem.categoria}
+                              onChange={(e) =>
+                                setEditingItem({ ...editingItem, categoria: e.target.value })
+                              }
+                            />
+                          ) : (
+                            item.categoria
+                          )}
+                        </td>
+                        <td className="item-actions">
+                          {editingItem && editingItem.id === item.id ? (
+                            <>
+                              <button className="btn-confirm" onClick={() => handleItemEditConfirm(editingItem)}>
+                                <i className="fas fa-check"></i> Confirmar
+                              </button>
+                              <button className="btn-cancel" onClick={handleItemEditCancel}>
+                                <i className="fas fa-times"></i> Cancelar
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button className="btn-edit" onClick={() => handleItemEdit(item)}>
+                                <i className="fas fa-edit"></i> Editar
+                              </button>
+                              <button className="btn-delete" onClick={() => handleItemDelete(item.id)}>
+                                <i className="fas fa-trash"></i> Eliminar
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <button className="btn-create" onClick={() => setShowItemForm(true)}>Crear Item</button>
+                {showItemForm && <ItemForm onSubmit={handleItemSubmit} item={editingItem} />}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
-};
-
-export default PlanDeRodaje;
+  };
+  
+  export default PlanDeRodaje;
