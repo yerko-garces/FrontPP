@@ -6,7 +6,11 @@ import { Link } from 'react-router-dom';
 import Sortable from 'sortablejs';
 import '../Assets/PlanDeRodaje.css';
 import DiaDeRodaje from './DiaDeRodaje';
+<<<<<<< Updated upstream
 import jsPDF from 'jspdf';
+=======
+import html2pdf from 'html2pdf.js';
+>>>>>>> Stashed changes
 import ItemForm from './ItemForm';
 
 const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter, personajeFilter) => {
