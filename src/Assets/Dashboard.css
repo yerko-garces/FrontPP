@@ -158,14 +158,21 @@
 }
 
 .proyecto-details {
-  flex: 2;
-  padding: 20px;
+  position: fixed;  
+  top: 0;         
+  left: 0;         
+  width: 100%;       
+  height: 100%;     
   background-color: #ffffff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;   
   overflow-y: auto;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
 }
 
 .close-details-button {
+  margin-left: 10px;    /* Empuja los botones hacia la derecha */
+  margin-right: 10px;
+  margin-top: 10px;
   display: flex;
   justify-content: flex-start;
   margin-bottom: 20px;
@@ -194,6 +201,8 @@
 .personaje-list,
 .locacion-list {
   margin-top: 20px;
+  margin-left: 10px;    /* Empuja los botones hacia la derecha */
+  margin-right: 10px;
 }
 
 .capitulo-item,
@@ -201,8 +210,8 @@
 .personaje-item,
 .locacion-item {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   padding: 10px;
   margin-bottom: 10px;
   background-color: #f8f9fa;
@@ -222,6 +231,10 @@
 .escena-actions button,
 .personaje-actions button,
 .locacion-actions button {
+  margin-left: auto; /* Empuja los botones hacia la derecha */
+  margin-right: auto;
+  display: flex;
+  justify-content: center;
   margin-left: 10px;
   padding: 8px;
   background-color: #007bff;
@@ -236,6 +249,8 @@
 .escena-actions button:hover,
 .personaje-actions button:hover,
 .locacion-actions button:hover {
+  display: flex;
+  justify-content: center;
   background-color: #0056b3;
 }
 
@@ -353,17 +368,120 @@
   flex-wrap: wrap;
 }
 
-.escena-list-ul {
-  flex: 1;
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.escena-list table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+  border-radius: 8px; /* Bordes redondeados */
+}
+
+.escena-list th, .escena-list td {
+  border: 1px solid #ddd;
+  padding: 12px; /* Más espacio de relleno */
+  text-align: left;
+}
+
+.escena-list th {
+  background-color: #3c628a; /* Color de fondo más llamativo */
+  color: white;
+  font-weight: bold;
+}
+
+.escena-list tr:nth-child(even) { /* Filas pares con fondo alterno */
+  background-color: #f2f2f2;
+}
+
+.escena-list tr:hover { /* Efecto hover en las filas */
+  background-color: #e9ecef;
 }
 
 .escena-form-container {
-  flex: 1;
   padding: 20px;
   background-color: #f8f9fa;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.capitulo-item {
+  display: flex;
+  align-items: center;  
+
+}
+
+.capitulo-actions {
+  margin-left: auto;    /* Empuja los botones hacia la derecha */
+  margin-right: 0;    /* Elimina el margen derecho automático */
+}
+
+.capitulo-item > span { /* Selecciona el span directamente dentro de capitulo-item */
+  flex-grow: 1;         /* Permite que el texto se expanda para ocupar el espacio disponible */
+  text-align: left;     /* Alinea el texto a la izquierda */
+  margin-left: 10px;    
+  margin-right: 10px;  
+}
+
+.capitulo-list ul {
+  display: flex; /* Hacemos que la lista sea un contenedor flexible */
+  flex-direction: column; /* Apilamos los elementos verticalmente */
+  gap: 10px; /* Espacio entre los elementos de la lista */
+}
+
+.capitulo-item .capitulo-actions button { /* Selector más específico */
+  margin-left: 10px;
+  margin-right: 10px;  /* Copia los estilos de .proyecto-actions button */
+  padding: 8px;
+  background-color: #007bff;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 10px;
+}
+
+.capitulo-item .capitulo-actions button:hover {
+  background-color: #0056b3;
+}
+
+.capitulo-item > span {
+  flex-grow: 1;
+  text-align: left;
+  font-size: 18px; /* Tamaño de fuente más pequeño para el nombre */
+}
+
+.escena-list {
+  width: 100%; /* Ocupa todo el ancho disponible */
+}
+
+.escena-container {
+  display: flex;
+  justify-content: space-between; /* Distribuimos el espacio entre la tabla y el botón */
+}
+
+.escena-list-ul {
+  flex-grow: 1; /* Permitimos que la tabla crezca y ocupe más espacio */
+}
+
+.capitulo-item .capitulo-actions button, /* Selector para botones de capítulos */
+.escena-actions button,
+.personaje-actions button,
+.locacion-actions button {
+  width: 120px; /* Ancho fijo para todos los botones */
+  padding: 8px;
+  background-color: #007bff;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  text-align: center; /* Asegura que el texto esté centrado */
+}
+
+.escena-list.expanded .capitulo-actions {
+  flex-direction: column;
+  top: auto;
+  bottom: 15px;
+  right: 15px;
+  margin-right: 20px; /* Espacio a la derecha */
 }

@@ -489,6 +489,7 @@ function Dashboard() {
       const response = await axios.get(`http://localhost:8080/api/escenas/capitulo/${capituloId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log('Respuesta completa de escenas:', JSON.stringify(response.data, null, 2));
       setSelectedCapitulo((prevCapitulo) => ({
         ...prevCapitulo,
         escenas: response.data,
@@ -721,42 +722,38 @@ function Dashboard() {
                       </div>
                       {selectedCapitulo && selectedCapitulo.id === capitulo.id && (
                         <div className="escena-list">
-                          <h5>Escenas:</h5>
+
                           {escenasExpandidas[capitulo.id] && (
                             <div className="escena-container">
-                              <ul className="escena-list-ul">
-                                {selectedCapitulo.escenas &&
-                                  selectedCapitulo.escenas.map((escena) => (
-                                    <li key={escena.id} className="escena-item" onClick={() => handleEscenaEdit(escena)}>
-                                      <div className="escena-header">
-                                        <span>{escena.titulo_escena}</span>
-                                        <div className="escena-actions">
-                                          {selectedEscena && selectedEscena.id === escena.id ? (
-                                            <>
-                                              <button className="btn-cancel" onClick={() => setSelectedEscena(null)}>
-                                                <i className="fas fa-times"></i> Cancelar
-                                              </button>
-                                            </>
-                                          ) : (
-                                            <>
-                                              <button className="btn-edit" onClick={() => handleEscenaEdit(escena)}>
-                                                <i className="fas fa-edit"></i> Editar
-                                              </button>
-                                              <button className="btn-delete" onClick={() => handleEscenaDelete(escena.id)}>
-                                                <i className="fas fa-trash"></i> Eliminar
-                                              </button>
-                                            </>
-                                          )}
-                                        </div>
-                                      </div>
-                                      <EscenaDetails
-                                        escena={escena}
-                                        personajes={personajes}
-                                        locaciones={locaciones}
-                                      />
-                                    </li>
-                                  ))}
-                              </ul>
+                              <table>
+                                <thead>
+                                  <tr>
+                                    <th>Escena</th>
+                                    <th>Resumen</th>
+                                    <th>Interior/Exterior</th>
+                                    <th>Día/Noche</th>
+                                    <th>Personajes</th>
+                                    <th>Locación</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {selectedCapitulo.escenas &&
+                                    selectedCapitulo.escenas.map((escena) => (
+                                      <tr key={escena.id}>
+                                        <td>{escena.titulo_escena}</td>
+                                        <td>{escena.resumen}</td>
+                                        <td>{escena.interior_exterior || "No especificado"}</td>
+                                        <td>{escena.dia_noche || "No especificado"}</td>
+                                        <td>
+                                          {escena.personajes && escena.personajes
+                                            .map((personaje) => personaje.nombre)
+                                            .join(", ")}
+                                        </td>
+                                        <td>{escena.locacion?.nombre || "No especificado"}</td>
+                                      </tr>
+                                    ))}
+                                </tbody>
+                              </table>
                               <div className="escena-form-container">
                                 <button className="btn-create" onClick={toggleEscenaForm}>
                                   {showEscenaForm ? 'Cancelar' : 'Crear Nueva Escena'}

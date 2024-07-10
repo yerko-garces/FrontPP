@@ -1,284 +1,49 @@
-/* PlanDeRodaje.css */
 .plan-de-rodaje {
-  margin-top: 50px;
-  display: flex;
-  flex-direction: column;
+  font-family: 'Roboto', sans-serif;
+  margin: 20px;
+  background-color: #f4f4f4;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
 .plan-de-rodaje-header {
-  position: relative;
-}
-
-.capitulo-button {
-  background-color: #000000;
-  color: white;
-  border: none;
-  padding: 10px;
-  margin-bottom: 5px;
-  cursor: pointer;
-  text-align: left;
-  width: 100%;
-}
-
-.btn-dashboard-container {
-  position: absolute;
-  top: 10px;
-  left: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
 }
 
 .titulo-proyecto {
-  text-align: center;
-  margin-bottom: 20px;
+  font-size: 24px;
+  margin: 0;
 }
 
-.plan-de-rodaje-body {
-  display: flex;
-  width: 100%;
-  height: calc(100vh - 200px); /* Ajusta el valor según sea necesario */
-}
+/* Botones de la cabecera */
+.btn-dashboard, .btn-descargar-pdf {
 
-.escenas-container {
-  width: 50%;
-  height: 100%;
-  overflow-y: auto;
-  border-right: 1px solid #ccc;
-  box-sizing: border-box;
-}
-
-.dias-de-rodaje-container {
-  width: 50%;
-  height: 100%;
-  overflow-y: auto;
-  box-sizing: border-box;
-}
-
-.plan-de-rodaje-filtros {
-  margin-bottom: 20px;
-  padding: 10px;
-  border-right: 1px solid #ccc;
-  box-sizing: border-box;
-}
-.bloque-placeholder {
-  padding: 20px;
-  border: 2px dashed #ccc;
-  text-align: center;
-  color: #999;
-}
-
-.escena-item {
-  background-color: #f2f2f2;
-  padding: 10px;
-  margin-bottom: 5px;
-  cursor: move;
-  border: 1px solid #ccc; /* Añadir un borde para mejor visualización */
-}
-
-.bloque-item {
-  background-color: #fff;
-  padding: 10px;
-  margin-bottom: 5px;
-  cursor: move;
-  border: 1px solid #ccc; /* Añadir un borde para mejor visualización */
-}
-
-.dias-de-rodaje {
-  flex: 1;
-  padding: 10px;
-}
-
-.dia-de-rodaje {
-  background-color: #f2f2f2;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  display: flex;
-  flex-direction: column;
-}
-
-.dia-info {
-  margin-bottom: 10px;
-  text-align: center;
-}
-
-.bloque-asignado {
-  background-color: #fff;
-  border: 1px solid #ccc;
-  padding: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.bloque-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.bloque-info span {
-  margin-bottom: 5px;
-}
-
-.bloque-escena {
-  position: relative; /* Necesario para que el botón se posicione en relación a este contenedor */
-  display: flex;
-  align-items: center;
-}
-
-.bloque-escena span {
-  margin-right: 10px;
-}
-
-.bloques-wrapper {
-  height: 100%;
-  overflow-y: auto; /* Asegura que haya desplazamiento vertical si es necesario */
-}
-
-.escena-list .escena-item,
-.bloque-list .bloque-item {
-  cursor: grab;
-}
-.eliminar-btn {
-  position: absolute; /* Posiciona el botón de forma absoluta dentro del contenedor */
-  top: 3px; /* Ajusta según sea necesario */
-  right: 20px; /* Ajusta según sea necesario */
-  background-color: #ff4d4d; /* Color de fondo rojo */
-  color: white; /* Color del texto blanco */
-  border: none; /* Sin borde */
-  padding: 5px 12px; /* Relleno del botón */
-  font-size: 15px;
-  cursor: pointer; /* Cambia el cursor al pasar sobre el botón */
-  border-radius: 25px; /* Bordes redondeados */
-  transition: background-color 0.3s; /* Transición para el cambio de color */
-}
-
-.eliminar-btn:hover {
-  background-color: #cc0000; /* Color de fondo al pasar el ratón por encima */
-}
-.guardar-btn {
-  background-color: #4caf50; /* Color de fondo verde */
-  color: white; /* Color del texto blanco */
-  border: none; /* Sin borde */
-  padding: 10px 20px; /* Relleno del botón */
-  cursor: pointer; /* Cambia el cursor al pasar sobre el botón */
-  border-radius: 5px; /* Bordes redondeados */
-  transition: background-color 0.3s; /* Transición para el cambio de color */
-  width: 100%; /* Ancho del 100% */
-}
-
-.guardar-btn:hover {
-  background-color: #45a049; /* Color de fondo al pasar el ratón por encima */
-}
-
-
-/* Añade esto a PlanDeRodaje.css */
-.inventario-container {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 0;
-  height: 100vh;
-  overflow-y: auto;
-  background-color: #ffffff;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-  transition: width 0.3s ease;
-  z-index: 1000;
-}
-
-.inventario-container.visible {
-  width: 800px;
-}
-
-.inventario-toggle {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 10px;
-  background-color: #333333;
-  color: #ffffff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  z-index: 1001;
-}
-
-.inventario-toggle:hover {
-  background-color: #555555;
-}
-
-.inventario-toggle i {
-  margin-right: 5px;
-}
-
-.inventario-window {
-  width: 100%;
-  padding: 20px;
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  overflow-y: auto;
-  transition: width 0.3s ease;
-}
-
-.inventario-window.expanded {
-  width: 100%;
-}
-
-.inventario-window h2 {
-  margin-bottom: 20px;
-  color: #333333;
-  font-size: 22px;
-}
-
-.inventario-window table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.inventario-window th,
-.inventario-window td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #dddddd;
-}
-
-.inventario-window th {
-  background-color: #f5f5f5;
-}
-
-.inventario-window td.item-actions {
-  display: flex;
-  justify-content: space-between;
-}
-
-.inventario-window td button {
-  margin-left: 5px;
-  padding: 8px;
   background-color: #007bff;
-  color: #ffffff;
+  color: white;
   border: none;
-  border-radius: 4px;
+  padding: 8px 15px;
+  border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s;
 }
 
-.inventario-window td button:hover {
+.btn-dashboard:hover, .btn-descargar-pdf:hover {
   background-color: #0056b3;
 }
 
-.inventario-window td button i {
-  font-size: 16px;
-}
-
-/* NUEVOOOO */
-
+/* Contenedor de botones de asignación y recuperación */
 .asignar-items-container {
-  margin: 20px 0;
-  text-align: right;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding: 0 15px;
 }
 
-.btn-asignar-items {
+.btn-asignar-items, .btn-recuperar-items {
   padding: 10px 15px;
   background-color: #4CAF50;
   color: white;
@@ -287,6 +52,144 @@
   cursor: pointer;
 }
 
-.btn-asignar-items:hover {
+.btn-asignar-items:hover, .btn-recuperar-items:hover {
   background-color: #45a049;
+}
+
+/* Plan de rodaje (cuerpo) */
+.plan-de-rodaje-body {
+  display: flex;
+  padding: 20px;
+}
+
+/* Lista de escenas */
+.escenas-container {
+  flex: 1;
+  margin-right: 20px;
+}
+
+.capitulo-container {
+  margin-bottom: 20px;
+}
+
+.capitulo-button {
+  margin-right: 10px;
+  background-color: #343a40;
+  color: white;
+  padding: 12px;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 18px;
+}
+
+.capitulo-button:focus {
+  outline: none;
+}
+
+.capitulo-button[aria-expanded="true"] {
+  background-color: #007bff;
+}
+
+.escenas-list-container {
+  background-color: white;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.escena-item {
+  background-color: #fff;
+  padding: 10px;
+  margin-bottom: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: move;
+}
+
+.escena-item:hover {
+  background-color: #f8f8f8;
+}
+
+/* Controles de filtrado */
+.plan-de-rodaje-controles {
+  background-color: white;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.plan-de-rodaje-filtros input,
+.plan-de-rodaje-filtros select {
+  padding: 8px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Días de rodaje */
+.dias-de-rodaje-container {
+  flex: 1;
+}
+
+.dias-de-rodaje {
+  background-color: white;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Bloques de rodaje */
+.bloque-item {
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+
+/* ... (resto de tus estilos) ... */
+
+/* Estilo para los botones de capítulos */
+.capitulo-item {
+  display: flex;
+  flex-direction: column; 
+  align-items: flex-start; 
+}
+
+.capitulo-actions {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 5px;
+}
+
+.capitulo-actions button {
+  width: 48%; /* Puedes ajustar este valor */
+  text-align: center;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+.titulo-proyecto {
+  font-size: 24px;
+  margin: 0 auto; /* Centra horizontalmente */
+}
+
+.asignar-items-container {
+  display: flex;
+  justify-content: space-between; /* Distribuye los botones con espacio entre ellos */
+  margin-top: 20px;
+  padding: 0 15px;
+  gap: 10px; /* Espacio entre los botones */
+}
+
+.btn-asignar-items,
+.btn-recuperar-items,
+.guardar-btn,
+.btn-descargar-pdf {
+  margin: 0 5px; /* Margen pequeño en cada botón */
 }
