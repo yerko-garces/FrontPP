@@ -12,18 +12,22 @@ import jsPDF from 'jspdf';
 import html2pdf from 'html2pdf.js';
 import ItemForm from './ItemForm';
 
-const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter, personajeFilter) => {
+const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter, personajeFilter, locacionFilter) => {
   return items.filter(item => {
     const tituloEscena = item?.escena?.titulo_escena || '';
     const diaNoche = item?.escena?.diaNoche || '';
     const interiorExterior = item?.escena?.interiorExterior || '';
     const personajes = item?.escena?.personajes || [];
+    const locacion = item?.escena?.locacion || '';
+
     const matchesSearchText = tituloEscena.toLowerCase().includes(searchText.toLowerCase());
     const matchesDiaNoche = diaNocheFilter ? diaNoche === diaNocheFilter : true;
     const matchesInteriorExterior = interiorExteriorFilter ? interiorExterior === interiorExteriorFilter : true;
     // Verificar si el personaje filtrado está presente en el array de personajes de la escena
     const matchesPersonaje = personajeFilter ? personajes.some(personaje => personaje.id === parseInt(personajeFilter)) : true;
-    return matchesSearchText && matchesDiaNoche && matchesInteriorExterior && matchesPersonaje;
+    const matchesLocacion = locacionFilter ? locacion === parseInt(locacionFilter) : true;
+
+    return matchesSearchText && matchesDiaNoche && matchesInteriorExterior && matchesPersonaje && matchesLocacion;
   });
 };
 const PlanDeRodaje = ({ onClose }) => {
@@ -34,6 +38,7 @@ const PlanDeRodaje = ({ onClose }) => {
   const [filtro, setFiltro] = useState('');
   const [diaNocheFiltro, setDiaNocheFiltro] = useState('');
   const [personajeFiltro, setPersonajeFiltro] = useState('');
+  const [locacionFiltro, setLocacionFiltro] = useState('');
   const [interiorExteriorFiltro, setInteriorExteriorFiltro] = useState('');
   const [bloques, setBloques] = useState({});
   const [escenas, setEscenas] = useState([]);
@@ -43,6 +48,7 @@ const PlanDeRodaje = ({ onClose }) => {
   const [proyecto, setProyecto] = useState(null);
   const [capitulos, setCapitulos] = useState([]);
   const [personajes, setPersonajes] = useState([]);
+  const [locaciones, setLocaciones] = useState([]);
   const [showInventario, setShowInventario] = useState(false);
   const [bodega, setBodega] = useState([]);
   const [showItemForm, setShowItemForm] = useState(false);
@@ -71,9 +77,16 @@ const PlanDeRodaje = ({ onClose }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         setPersonajes(personajesResponse.data);
-        const capitulosResponse = await axios.get(`http://localhost:8080/api/capitulos/${proyectoId}`, {
+
+          // Recuperar locaciones
+        const locacionesResponse = await axios.get(`http://localhost:8080/api/locaciones/proyecto/${proyectoId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        setLocaciones(locacionesResponse.data);        
+
+        const capitulosResponse = await axios.get(`http://localhost:8080/api/capitulos/${proyectoId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });   
         const capitulosConEscenas = capitulosResponse.data.map(capitulo => ({
           ...capitulo,
           escenas: escenasResponse.data.filter(escena => escena.escena.capitulo === capitulo.id)
@@ -326,6 +339,9 @@ const PlanDeRodaje = ({ onClose }) => {
   const handleInteriorExteriorFiltroChange = (e) => {
     setInteriorExteriorFiltro(e.target.value);
   };
+  const handleLocacionFiltroChange = (event) => {
+    setLocacionFiltro(event.target.value);
+  };
   const generarPDF = () => {
     const doc = new jsPDF();
     // Configurar el título
@@ -380,7 +396,7 @@ const PlanDeRodaje = ({ onClose }) => {
   const handleHoraChange = (bloqueId, nuevaHora, dia) => {
     actualizarBloqueFormulario(bloqueId, nuevaHora, 'hora', dia);
   };
-  const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro, personajeFiltro);
+  const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro, personajeFiltro, locacionFiltro);
   //NUEVOOOO
   const fetchItemsAsignadosPorFecha = async () => {
     try {
@@ -503,6 +519,12 @@ const PlanDeRodaje = ({ onClose }) => {
                   <option key={personaje.id} value={personaje.id}>{personaje.nombre}</option>
                 ))}
               </select>
+              <select value={locacionFiltro} onChange={handleLocacionFiltroChange}>
+            <option value="">Seleccionar Locación</option>
+            {locaciones.map(locacion => (
+              <option key={locacion.id} value={locacion.id}>{locacion.nombre}</option>
+            ))}
+          </select>
             </div>
           </div>
           {capitulos.map(capitulo => (
