@@ -742,14 +742,14 @@ function Dashboard() {
                                       <tr key={escena.id}>
                                         <td>{escena.titulo_escena}</td>
                                         <td>{escena.resumen}</td>
-                                        <td>{escena.interior_exterior || "No especificado"}</td>
-                                        <td>{escena.dia_noche || "No especificado"}</td>
+                                        <td>{escena.interiorExterior || "No especificado"}</td>
+                                        <td>{escena.diaNoche || "No especificado"}</td>
                                         <td>
-                                          {escena.personajes && escena.personajes
-                                            .map((personaje) => personaje.nombre)
-                                            .join(", ")}
+                                          {escena.personajes
+                                            ? escena.personajes.map(p => p.nombre).join(", ")
+                                            : "No especificado"}
                                         </td>
-                                        <td>{escena.locacion?.nombre || "No especificado"}</td>
+                                        <td>{escena.locacion ? escena.locacion.nombre : "No especificado"}</td>
                                       </tr>
                                     ))}
                                 </tbody>
