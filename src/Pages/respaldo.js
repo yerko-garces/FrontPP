@@ -6,21 +6,30 @@ import { Link } from 'react-router-dom';
 import Sortable from 'sortablejs';
 import '../Assets/PlanDeRodaje.css';
 import DiaDeRodaje from './DiaDeRodaje';
-import ItemForm from './ItemForm';
+import AsignarItemsFecha from './AsignarItemsFecha';
+import RecuperarItemsFecha from './RecuperarItemsFecha';
+import jsPDF from 'jspdf';
 import html2pdf from 'html2pdf.js';
+import ItemForm from './ItemForm';
 
-const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter) => {
+const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter, personajeFilter, locacionFilter) => {
   return items.filter(item => {
     const tituloEscena = item?.escena?.titulo_escena || '';
     const diaNoche = item?.escena?.diaNoche || '';
     const interiorExterior = item?.escena?.interiorExterior || '';
+    const personajes = item?.escena?.personajes || [];
+    const locacion = item?.escena?.locacion || '';
+
     const matchesSearchText = tituloEscena.toLowerCase().includes(searchText.toLowerCase());
     const matchesDiaNoche = diaNocheFilter ? diaNoche === diaNocheFilter : true;
     const matchesInteriorExterior = interiorExteriorFilter ? interiorExterior === interiorExteriorFilter : true;
-    return matchesSearchText && matchesDiaNoche && matchesInteriorExterior;
+    // Verificar si el personaje filtrado está presente en el array de personajes de la escena
+    const matchesPersonaje = personajeFilter ? personajes.some(personaje => personaje.id === parseInt(personajeFilter)) : true;
+    const matchesLocacion = locacionFilter ? locacion === parseInt(locacionFilter) : true;
+
+    return matchesSearchText && matchesDiaNoche && matchesInteriorExterior && matchesPersonaje && matchesLocacion;
   });
 };
-
 const PlanDeRodaje = ({ onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -28,6 +37,8 @@ const PlanDeRodaje = ({ onClose }) => {
   const [capitulosActivos, setCapitulosActivos] = useState(new Set());
   const [filtro, setFiltro] = useState('');
   const [diaNocheFiltro, setDiaNocheFiltro] = useState('');
+  const [personajeFiltro, setPersonajeFiltro] = useState('');
+  const [locacionFiltro, setLocacionFiltro] = useState('');
   const [interiorExteriorFiltro, setInteriorExteriorFiltro] = useState('');
   const [bloques, setBloques] = useState({});
   const [escenas, setEscenas] = useState([]);
@@ -36,22 +47,21 @@ const PlanDeRodaje = ({ onClose }) => {
   const [draggedItem, setDraggedItem] = useState(null);
   const [proyecto, setProyecto] = useState(null);
   const [capitulos, setCapitulos] = useState([]);
-  //NUEVO PARA AGREGAR
+  const [personajes, setPersonajes] = useState([]);
+  const [locaciones, setLocaciones] = useState([]);
   const [showInventario, setShowInventario] = useState(false);
   const [bodega, setBodega] = useState([]);
   const [showItemForm, setShowItemForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  
-
-
-
-
+  const [showAsignarItems, setShowAsignarItems] = useState(false);
+  const [itemsAsignadosPorFecha, setItemsAsignadosPorFecha] = useState({});
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
+  const [showRecuperarItems, setShowRecuperarItems] = useState(false);
   useEffect(() => {
     if (!proyectoId) {
       navigate('/');
       return;
     }
-
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
@@ -63,16 +73,25 @@ const PlanDeRodaje = ({ onClose }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         setProyecto(proyectoResponse.data);
+        const personajesResponse = await axios.get(`http://localhost:8080/api/personajes/proyecto/${proyectoId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setPersonajes(personajesResponse.data);
+
+          // Recuperar locaciones
+        const locacionesResponse = await axios.get(`http://localhost:8080/api/locaciones/proyecto/${proyectoId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setLocaciones(locacionesResponse.data);        
 
         const capitulosResponse = await axios.get(`http://localhost:8080/api/capitulos/${proyectoId}`, {
           headers: { Authorization: `Bearer ${token}` },
-        });
+        });   
         const capitulosConEscenas = capitulosResponse.data.map(capitulo => ({
           ...capitulo,
           escenas: escenasResponse.data.filter(escena => escena.escena.capitulo === capitulo.id)
         }));
         setCapitulos(capitulosConEscenas);
-
         const bloquesResponse = await axios.get(`http://localhost:8080/api/planes-de-rodaje/${proyectoId}/bloques`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -82,7 +101,8 @@ const PlanDeRodaje = ({ onClose }) => {
           return acc;
         }, {});
         setBloques(bloquesPorDia);
-        //NUEVO PARA AGREGAR
+        //NUEVO
+        fetchItemsAsignadosPorFecha();
         await fetchInventario();
       } catch (error) {
         console.error(error);
@@ -90,23 +110,16 @@ const PlanDeRodaje = ({ onClose }) => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [proyectoId, navigate]);
-
-  //NUEVO PARA AGREGAR
-
-  
   const fetchInventario = async () => {
     try {
       const token = localStorage.getItem('token');
-      
       // Obtener el ID del usuario actual
       const userResponse = await axios.get('http://localhost:8080/api/proyectos/usuario-id', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const usuarioId = userResponse.data;
-  
       // Ahora usa este usuarioId para obtener la bodega
       const response = await axios.get(`http://localhost:8080/api/items/bodega/${usuarioId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -116,8 +129,6 @@ const PlanDeRodaje = ({ onClose }) => {
       console.error('Error fetching inventory:', error);
     }
   };
-
-
   const handleItemSubmit = async (item) => {
     try {
       const token = localStorage.getItem('token');
@@ -138,12 +149,10 @@ const PlanDeRodaje = ({ onClose }) => {
       console.error(error);
     }
   };
-
   const handleItemEdit = (item) => {
     setEditingItem(item);
     setShowItemForm(true);
   };
-
   const handleItemDelete = async (itemId) => {
     try {
       const token = localStorage.getItem('token');
@@ -155,23 +164,17 @@ const PlanDeRodaje = ({ onClose }) => {
       console.error(error);
     }
   };
-
   const handleItemEditCancel = () => {
     setEditingItem(null);
     setShowItemForm(false);
   };
-
   const handleItemEditConfirm = async (item) => {
     await handleItemSubmit(item);
     setEditingItem(null);
   };
-
   const toggleInventario = () => {
     setShowInventario(!showInventario);
   };
-
-  //NUEVO PARA AGREGAR EN CASO
-
   useEffect(() => {
     capitulos.forEach(capitulo => {
       const escenasContainer = document.getElementById(`escenas-container-${capitulo.id}`);
@@ -180,7 +183,7 @@ const PlanDeRodaje = ({ onClose }) => {
           group: {
             name: 'shared',
             pull: 'clone',
-            put: false
+            put: false // No permitir que se suelten elementos en los contenedores de escenas
           },
           animation: 150,
           sort: false,
@@ -192,7 +195,6 @@ const PlanDeRodaje = ({ onClose }) => {
         });
       }
     });
-
     Object.keys(bloquesRefs.current).forEach((dia) => {
       if (bloquesRefs.current[dia]) {
         Sortable.create(bloquesRefs.current[dia], {
@@ -210,8 +212,8 @@ const PlanDeRodaje = ({ onClose }) => {
               const nuevoBloque = {
                 id: `nuevo-${new Date().getTime()}`,
                 escena,
-                fecha: new Date(dia), // Crear una nueva instancia de Date para fecha
-                hora: new Date(), // Crear una nueva instancia de Date para hora
+                fecha: new Date(dia),
+                hora: new Date(),
                 titulo: '',
                 posicion: bloques[dia]?.length + 1 || 1,
               };
@@ -227,12 +229,9 @@ const PlanDeRodaje = ({ onClose }) => {
       }
     });
   }, [proyectoId, navigate, escenas, bloques, capitulos]);
-
   const handleFiltroChange = (e) => {
     setFiltro(e.target.value);
   };
-
-
   const handleGuardarTodosBloques = async () => {
     const token = localStorage.getItem('token');
     const bloquesAGuardar = Object.entries(bloques).flatMap(([dia, bloquesPorDia]) =>
@@ -248,7 +247,6 @@ const PlanDeRodaje = ({ onClose }) => {
         return formatearBloque({ ...bloque, titulo, fecha, hora });
       })
     );
-
     try {
       await axios.put('http://localhost:8080/api/bloques/actualizar', bloquesAGuardar, {
         headers: { Authorization: `Bearer ${token}` },
@@ -259,8 +257,6 @@ const PlanDeRodaje = ({ onClose }) => {
       alert('Error al guardar los bloques');
     }
   };
-
-
   const formatearBloque = (bloque) => {
     let horaDate;
     if (typeof bloque.hora === 'string') {
@@ -272,7 +268,6 @@ const PlanDeRodaje = ({ onClose }) => {
     } else {
       horaDate = bloque.hora;
     }
-
     const bloqueFormateado = {
       planDeRodaje: {
         id: proyectoId,
@@ -284,10 +279,8 @@ const PlanDeRodaje = ({ onClose }) => {
       id: bloque.id || null,
       hora: horaDate ? `${horaDate.getHours().toString().padStart(2, '0')}:${horaDate.getMinutes().toString().padStart(2, '0')}` : null,
     };
-
     return bloqueFormateado;
   };
-
   const handleEliminarBloque = async (id, dia) => {
     try {
       const token = localStorage.getItem('token');
@@ -305,10 +298,8 @@ const PlanDeRodaje = ({ onClose }) => {
       alert('Error al eliminar el bloque');
     }
   };
-
   const handleDrop = (e, dia, indexDestino) => {
     e.preventDefault();
-
     let bloqueData;
     try {
       bloqueData = JSON.parse(e.dataTransfer.getData('bloqueData'));
@@ -316,14 +307,11 @@ const PlanDeRodaje = ({ onClose }) => {
       alert('El elemento arrastrado no es válido');
       return;
     }
-
     const { escena, fecha, hora } = bloqueData;
-
     if (!escena) {
       alert('El elemento arrastrado no es una escena válida');
       return;
     }
-
     const nuevoBloque = {
       escena: { ...escena },
       fecha: new Date(),
@@ -331,7 +319,6 @@ const PlanDeRodaje = ({ onClose }) => {
       titulo: '',
       posicion: bloques[dia]?.length + 1 || 1,
     };
-
     setBloques((prevBloques) => {
       const nuevoBloques = { ...prevBloques };
       if (indexDestino !== undefined) {
@@ -341,40 +328,52 @@ const PlanDeRodaje = ({ onClose }) => {
       }
       return nuevoBloques;
     });
-
     setDraggedItem(null);
   };
-
-  const handleDragStart = (e) => {
-    setDraggedItem(e.item);
-  };
-
-  const actualizarBloque = (bloqueActualizado, dia) => {
-    setBloques((prevBloques) => {
-      const nuevoBloques = { ...prevBloques };
-      nuevoBloques[dia] = prevBloques[dia].map((bloque) =>
-        bloque.id === bloqueActualizado.id ? { ...bloqueActualizado } : bloque
-      );
-      return nuevoBloques;
-    });
-  };
-
   const handleDiaNocheFiltroChange = (e) => {
     setDiaNocheFiltro(e.target.value);
   };
-
+  const handlePersonajeFiltroChange = (event) => {
+    setPersonajeFiltro(event.target.value);
+  };
   const handleInteriorExteriorFiltroChange = (e) => {
     setInteriorExteriorFiltro(e.target.value);
   };
-
-  const generarPDF = () => {
-    const elemento = document.querySelector('.plan-de-rodaje');
-    html2pdf().from(elemento).save();
+  const handleLocacionFiltroChange = (event) => {
+    setLocacionFiltro(event.target.value);
   };
-
-
+  const generarPDF = () => {
+    const doc = new jsPDF();
+    // Configurar el título
+    doc.setFontSize(18);
+    doc.text('Plan de Rodaje', 105, 20, { align: 'center' });
+    // Agregar información del proyecto
+    doc.setFontSize(12);
+    doc.text(`Nombre del proyecto: ${proyecto.titulo}`, 20, 40);
+    doc.text(`Director: ${proyecto.director || 'No especificado'}`, 20, 50);
+    // Agregar información de los bloques
+    let yPos = 70;
+    Object.entries(bloques).forEach(([dia, bloquesDia]) => {
+      doc.setFontSize(14);
+      doc.text(`Día: ${dia}`, 20, yPos);
+      yPos += 10;
+      bloquesDia.forEach((bloque, index) => {
+        doc.setFontSize(10);
+        doc.text(`Bloque ${index + 1}: ${bloque.titulo || 'Sin título'}`, 30, yPos);
+        doc.text(`Escena: ${bloque.escena?.titulo_escena || 'Sin título'}`, 40, yPos + 5);
+        doc.text(`Hora: ${bloque.hora || 'No especificada'}`, 40, yPos + 10);
+        yPos += 20;
+        if (yPos > 280) {  // Si estamos cerca del final de la página
+          doc.addPage();  // Agregar una nueva página
+          yPos = 20;  // Reiniciar la posición Y
+        }
+      });
+      yPos += 10;  // Espacio entre días
+    });
+    // Guardar el PDF
+    doc.save('plan_de_rodaje.pdf');
+  };
   const [bloqueFormularios, setBloqueFormularios] = useState({});
-
   const actualizarBloqueFormulario = (bloqueId, nuevoValor, campo, dia) => {
     setBloqueFormularios((prevBloqueFormularios) => {
       const nuevosBloqueFormularios = { ...prevBloqueFormularios };
@@ -388,23 +387,68 @@ const PlanDeRodaje = ({ onClose }) => {
       return nuevosBloqueFormularios;
     });
   };
-
   const handleTituloChange = (bloqueId, nuevoTitulo, dia) => {
     actualizarBloqueFormulario(bloqueId, nuevoTitulo, 'titulo', dia);
   };
-
   const handleFechaChange = (bloqueId, nuevaFecha, dia) => {
     actualizarBloqueFormulario(bloqueId, nuevaFecha, 'fecha', dia);
   };
-
   const handleHoraChange = (bloqueId, nuevaHora, dia) => {
     actualizarBloqueFormulario(bloqueId, nuevaHora, 'hora', dia);
   };
-
-
-
-  const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro);
-
+  const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro, personajeFiltro, locacionFiltro);
+  //NUEVOOOO
+  const fetchItemsAsignadosPorFecha = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:8080/api/bloque-items/por-fecha', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { fecha: dayjs().format('YYYY-MM-DD') }
+      });
+      const itemsPorFecha = response.data.reduce((acc, item) => {
+        const fecha = dayjs(item.bloque.fecha).format('YYYY-MM-DD');
+        if (!acc[fecha]) acc[fecha] = [];
+        acc[fecha].push(item);
+        return acc;
+      }, {});
+      setItemsAsignadosPorFecha(itemsPorFecha);
+    } catch (error) {
+      console.error('Error al obtener items asignados por fecha:', error);
+    }
+  };
+  const handleAsignarItems = async (fecha, items) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('http://localhost:8080/api/bloque-items/asignar-por-fecha', {
+        fecha: dayjs(fecha).format('YYYY-MM-DD'),
+        items
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchItemsAsignadosPorFecha();
+      setShowAsignarItems(false);
+    } catch (error) {
+      console.error('Error al asignar items:', error);
+      alert('Error al asignar items. Por favor, intente de nuevo.');
+    }
+  };
+  const handleRecuperarItems = async (fecha, items) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('http://localhost:8080/api/bloque-items/recuperar-por-fecha', {
+        fecha: dayjs(fecha).format('YYYY-MM-DD'),
+        items
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchItemsAsignadosPorFecha();
+      fetchInventario(); // Asegúrate de que esta función existe y actualiza el estado de la bodega
+      setShowRecuperarItems(false);
+    } catch (error) {
+      console.error('Error al recuperar items:', error);
+      alert('Error al recuperar items. Por favor, intente de nuevo.');
+    }
+  };
   if (loading) {
     return <div>Cargando...</div>;
   }
@@ -418,12 +462,11 @@ const PlanDeRodaje = ({ onClose }) => {
     }
     setCapitulosActivos(newSet);
   };
-
   return (
-    <div className="plan-de-rodaje" onDrop={(e) => handleDrop(e, 'Sin Fecha', undefined)} onDragOver={(e) => e.preventDefault()}>
+    <div className="plan-de-rodaje">
       <div className="plan-de-rodaje-header">
         <div className="btn-dashboard-container">
-          <button onClick={generarPDF}>Descargar PDF</button>
+
           <Link to="/dashboard">
             <button className="btn-dashboard">
               <i className="fas fa-film"></i> Volver a proyectos
@@ -432,10 +475,28 @@ const PlanDeRodaje = ({ onClose }) => {
         </div>
         <h1 className="titulo-proyecto">{proyecto.titulo}</h1>
       </div>
+      <div className="asignar-items-container">
+
+        {showAsignarItems && (
+          <AsignarItemsFecha
+            onClose={() => setShowAsignarItems(false)}
+            onAsignar={handleAsignarItems}
+            fecha={fechaSeleccionada}
+          />
+        )}
+        {showRecuperarItems && (
+          <RecuperarItemsFecha
+            onClose={() => setShowRecuperarItems(false)}
+            onRecuperar={handleRecuperarItems}
+            fecha={fechaSeleccionada}
+          />
+        )}
+      </div>
       <div className="plan-de-rodaje-body">
         <div className="escenas-container">
           <div className="plan-de-rodaje-controles">
             <div className="plan-de-rodaje-filtros">
+              <h2>Filtros</h2>
               <input
                 type="text"
                 placeholder="Filtrar escenas por título"
@@ -452,6 +513,18 @@ const PlanDeRodaje = ({ onClose }) => {
                 <option value="INTERIOR">Interior</option>
                 <option value="EXTERIOR">Exterior</option>
               </select>
+              <select value={personajeFiltro} onChange={handlePersonajeFiltroChange}>
+                <option value="">Seleccionar Personaje</option>
+                {personajes.map(personaje => (
+                  <option key={personaje.id} value={personaje.id}>{personaje.nombre}</option>
+                ))}
+              </select>
+              <select value={locacionFiltro} onChange={handleLocacionFiltroChange}>
+            <option value="">Seleccionar Locación</option>
+            {locaciones.map(locacion => (
+              <option key={locacion.id} value={locacion.id}>{locacion.nombre}</option>
+            ))}
+          </select>
             </div>
           </div>
           {capitulos.map(capitulo => (
@@ -481,6 +554,8 @@ const PlanDeRodaje = ({ onClose }) => {
                       >
                         <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
                         <span>{escenaObj.escena.resumen}</span>
+                        <span>{escenaObj.escena.DiaDeRodaje}</span>
+                      
                       </li>
                     ))}
                   </ul>
@@ -489,9 +564,16 @@ const PlanDeRodaje = ({ onClose }) => {
             </div>
           ))}
         </div>
-        <div className="dias-de-rodaje-container">
+        <div className="dias-de-rodaje-container" onDrop={(e) => handleDrop(e, 'Sin Fecha', undefined)} onDragOver={(e) => e.preventDefault()}>
           <button className="guardar-btn" onClick={handleGuardarTodosBloques}>
             Guardar Bloques
+          </button>
+          <button onClick={generarPDF}>Descargar PDF</button>
+          <button onClick={() => setShowAsignarItems(true)} className="btn-asignar-items">
+            Asignar Items a Fecha
+          </button>
+          <button onClick={() => setShowRecuperarItems(true)} className="btn-recuperar-items">
+            Recuperar Items de Fecha
           </button>
           {Object.keys(bloques).map((dia) => (
             <div
@@ -499,8 +581,6 @@ const PlanDeRodaje = ({ onClose }) => {
               className="dias-de-rodaje"
               data-dia={dia}
               ref={(el) => (bloquesRefs.current[dia] = el)}
-              onDrop={(e) => handleDrop(e, dia)}
-              onDragOver={(e) => e.preventDefault()}
             >
               <h4>{dia}</h4>
               {bloques[dia].map((bloque) => (
@@ -518,8 +598,6 @@ const PlanDeRodaje = ({ onClose }) => {
             </div>
           ))}
         </div>
-
-        {/* NUEVO PARA AGREGAR  despues del div para de dias de rodaje container*/}
         <div className={`inventario-container ${showInventario ? 'visible' : ''}`}>
           <button className="inventario-toggle" onClick={toggleInventario}>
             <i className="fas fa-boxes"></i> Inventario
@@ -608,12 +686,8 @@ const PlanDeRodaje = ({ onClose }) => {
             </div>
           )}
         </div>
-
       </div>
     </div>
-
-
   );
 };
-
 export default PlanDeRodaje;

@@ -30,7 +30,7 @@ const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter, 
     return matchesSearchText && matchesDiaNoche && matchesInteriorExterior && matchesPersonaje && matchesLocacion;
   });
 };
-const PlanDeRodaje = ({ onClose }) => {
+const PlanDeRodaje = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { proyectoId } = location.state || {};
@@ -40,11 +40,10 @@ const PlanDeRodaje = ({ onClose }) => {
   const [personajeFiltro, setPersonajeFiltro] = useState('');
   const [locacionFiltro, setLocacionFiltro] = useState('');
   const [interiorExteriorFiltro, setInteriorExteriorFiltro] = useState('');
-  const [bloques, setBloques] = useState({});
+  const [planes, setPlanes] = useState([]);
   const [escenas, setEscenas] = useState([]);
   const [loading, setLoading] = useState(true);
-  const bloquesRefs = useRef({});
-  const [draggedItem, setDraggedItem] = useState(null);
+  const planesRefs = useRef({});
   const [proyecto, setProyecto] = useState(null);
   const [capitulos, setCapitulos] = useState([]);
   const [personajes, setPersonajes] = useState([]);
@@ -57,6 +56,7 @@ const PlanDeRodaje = ({ onClose }) => {
   const [itemsAsignadosPorFecha, setItemsAsignadosPorFecha] = useState({});
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
   const [showRecuperarItems, setShowRecuperarItems] = useState(false);
+
   useEffect(() => {
     if (!proyectoId) {
       navigate('/');
@@ -95,6 +95,8 @@ const PlanDeRodaje = ({ onClose }) => {
         const bloquesResponse = await axios.get(`http://localhost:8080/api/planes-de-rodaje/${proyectoId}/bloques`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        const planesResponse = await axios.get(`http://localhost:8080/api/planes/${proyectoId}`, { headers: { Authorization: `Bearer ${token}` } });
+        
         const bloquesPorDia = bloquesResponse.data.reduce((acc, bloque) => {
           const dia = dayjs(bloque.fecha).format('YYYY-MM-DD');
           acc[dia] = [...(acc[dia] || []), bloque];
@@ -183,7 +185,7 @@ const PlanDeRodaje = ({ onClose }) => {
           group: {
             name: 'shared',
             pull: 'clone',
-            put: false // No permitir que se suelten elementos en los contenedores de escenas
+            put: false
           },
           animation: 150,
           sort: false,
@@ -195,40 +197,97 @@ const PlanDeRodaje = ({ onClose }) => {
         });
       }
     });
-    Object.keys(bloquesRefs.current).forEach((dia) => {
-      if (bloquesRefs.current[dia]) {
-        Sortable.create(bloquesRefs.current[dia], {
-          group: 'bloques',
+
+    Object.keys(planesRefs.current).forEach((planId) => {
+      if (planesRefs.current[planId]) {
+        Sortable.create(planesRefs.current[planId], {
+          group: 'planes',
           animation: 150,
           onAdd: (evt) => {
             const escenaId = evt.item.getAttribute('data-id');
-            const dia = evt.to.getAttribute('data-dia');
-            if (dia) {
+            const planId = evt.to.getAttribute('data-plan-id');
+            if (planId) {
               const escena = escenas.find((e) => e.id === parseInt(escenaId));
               if (!escena) {
                 alert('El elemento arrastrado no es una escena válida');
                 return;
               }
-              const nuevoBloque = {
-                id: `nuevo-${new Date().getTime()}`,
-                escena,
-                fecha: new Date(dia),
-                hora: new Date(),
-                titulo: '',
-                posicion: bloques[dia]?.length + 1 || 1,
-              };
-              setBloques((prevBloques) => {
-                const nuevoBloques = { ...prevBloques };
-                nuevoBloques[dia] = [...(nuevoBloques[dia] || []), nuevoBloque];
-                return nuevoBloques;
-              });
+              agregarEscenaAPlan(planId, escena);
             }
             evt.item.remove();
           },
         });
       }
     });
-  }, [proyectoId, navigate, escenas, bloques, capitulos]);
+  }, [proyectoId, navigate, escenas, planes, capitulos]);
+
+  const agregarEscenaAPlan = async (planId, escena) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`http://localhost:8080/api/planes/${planId}/escenas`, escena, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const planesActualizados = planes.map(plan => {
+        if (plan.id === parseInt(planId)) {
+          return { ...plan, escenas: [...plan.escenas, escena] };
+        }
+        return plan;
+      });
+      setPlanes(planesActualizados);
+    } catch (error) {
+      console.error('Error al agregar escena al plan:', error);
+      alert('Error al agregar escena al plan');
+    }
+  };
+
+  const handleCrearPlan = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const nuevoPlan = {
+        titulo: "Nuevo Plan",
+        fecha: new Date(),
+        director: proyecto.director || '',
+        proyectoId: proyectoId
+      };
+      const response = await axios.post('http://localhost:8080/api/planes', nuevoPlan, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPlanes([...planes, response.data]);
+    } catch (error) {
+      console.error('Error al crear nuevo plan:', error);
+      alert('Error al crear nuevo plan');
+    }
+  };
+
+  const handleGuardarPlanes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put('http://localhost:8080/api/planes', planes, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert('Planes guardados correctamente');
+    } catch (error) {
+      console.error('Error al guardar los planes:', error);
+      alert('Error al guardar los planes');
+    }
+  };
+
+
+  const handleEliminarPlan = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:8080/api/planes/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPlanes(planes.filter(plan => plan.id !== id));
+      alert('Plan eliminado correctamente');
+    } catch (error) {
+      console.error('Error al eliminar el plan:', error);
+      alert('Error al eliminar el plan');
+    }
+  };
+
+
   const handleFiltroChange = (e) => {
     setFiltro(e.target.value);
   };
@@ -466,7 +525,6 @@ const PlanDeRodaje = ({ onClose }) => {
     <div className="plan-de-rodaje">
       <div className="plan-de-rodaje-header">
         <div className="btn-dashboard-container">
-
           <Link to="/dashboard">
             <button className="btn-dashboard">
               <i className="fas fa-film"></i> Volver a proyectos
@@ -476,21 +534,16 @@ const PlanDeRodaje = ({ onClose }) => {
         <h1 className="titulo-proyecto">{proyecto.titulo}</h1>
       </div>
       <div className="asignar-items-container">
-
-        {showAsignarItems && (
-          <AsignarItemsFecha
-            onClose={() => setShowAsignarItems(false)}
-            onAsignar={handleAsignarItems}
-            fecha={fechaSeleccionada}
-          />
-        )}
-        {showRecuperarItems && (
-          <RecuperarItemsFecha
-            onClose={() => setShowRecuperarItems(false)}
-            onRecuperar={handleRecuperarItems}
-            fecha={fechaSeleccionada}
-          />
-        )}
+        <button onClick={() => setShowAsignarItems(true)} className="btn-asignar-items">
+          Asignar Items a Fecha
+        </button>
+        <button onClick={() => setShowRecuperarItems(true)} className="btn-recuperar-items">
+          Recuperar Items de Fecha
+        </button>
+        <button onClick={handleGuardarPlanes} className="guardar-btn">
+          Guardar Planes
+        </button>
+        <button onClick={generarPDF} className="btn-descargar-pdf">Descargar PDF</button>
       </div>
       <div className="plan-de-rodaje-body">
         <div className="escenas-container">
@@ -520,11 +573,11 @@ const PlanDeRodaje = ({ onClose }) => {
                 ))}
               </select>
               <select value={locacionFiltro} onChange={handleLocacionFiltroChange}>
-            <option value="">Seleccionar Locación</option>
-            {locaciones.map(locacion => (
-              <option key={locacion.id} value={locacion.id}>{locacion.nombre}</option>
-            ))}
-          </select>
+                <option value="">Seleccionar Locación</option>
+                {locaciones.map(locacion => (
+                  <option key={locacion.id} value={locacion.id}>{locacion.nombre}</option>
+                ))}
+              </select>
             </div>
           </div>
           {capitulos.map(capitulo => (
@@ -547,15 +600,13 @@ const PlanDeRodaje = ({ onClose }) => {
                         data-id={escenaObj.escena.id}
                         draggable
                         onDragStart={(e) => {
-                          const bloqueData = JSON.stringify(escenaObj);
-                          e.dataTransfer.setData('bloqueData', bloqueData);
-                          setDraggedItem(escenaObj);
+                          const escenaData = JSON.stringify(escenaObj);
+                          e.dataTransfer.setData('escenaData', escenaData);
                         }}
                       >
                         <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
                         <span>{escenaObj.escena.resumen}</span>
-                        <span>{escenaObj.escena.DiaDeRodaje}</span>
-                      
+                        <span>{escenaObj.escena.diaNoche}</span>
                       </li>
                     ))}
                   </ul>
@@ -564,37 +615,38 @@ const PlanDeRodaje = ({ onClose }) => {
             </div>
           ))}
         </div>
-        <div className="dias-de-rodaje-container" onDrop={(e) => handleDrop(e, 'Sin Fecha', undefined)} onDragOver={(e) => e.preventDefault()}>
-          <button className="guardar-btn" onClick={handleGuardarTodosBloques}>
-            Guardar Bloques
-          </button>
-          <button onClick={generarPDF}>Descargar PDF</button>
-          <button onClick={() => setShowAsignarItems(true)} className="btn-asignar-items">
-            Asignar Items a Fecha
-          </button>
-          <button onClick={() => setShowRecuperarItems(true)} className="btn-recuperar-items">
-            Recuperar Items de Fecha
-          </button>
-          {Object.keys(bloques).map((dia) => (
+        <div className="planes-container">
+          <button className="crear-plan-btn" onClick={handleCrearPlan}>Crear Nuevo Plan</button>
+          {planes.map((plan) => (
             <div
-              key={`dia-${dia}`}
-              className="dias-de-rodaje"
-              data-dia={dia}
-              ref={(el) => (bloquesRefs.current[dia] = el)}
+              key={plan.id}
+              className="plan-item"
+              ref={(el) => (planesRefs.current[plan.id] = el)}
+              data-plan-id={plan.id}
             >
-              <h4>{dia}</h4>
-              {bloques[dia].map((bloque) => (
-                <div key={bloque.id} className="bloque-item">
-                  <DiaDeRodaje
-                    bloque={bloque}
-                    handleEliminarBloque={handleEliminarBloque}
-                    dia={dia}
-                    onTituloChange={(bloqueId, nuevoTitulo) => handleTituloChange(bloqueId, nuevoTitulo, dia)}
-                    onFechaChange={(bloqueId, nuevaFecha) => handleFechaChange(bloqueId, nuevaFecha, dia)}
-                    onHoraChange={(bloqueId, nuevaHora) => handleHoraChange(bloqueId, nuevaHora, dia)}
-                  />
-                </div>
-              ))}
+              <h3>{plan.titulo}</h3>
+              <input
+                type="text"
+                value={plan.titulo}
+                onChange={(e) => handlePlanTituloChange(plan.id, e.target.value)}
+              />
+              <input
+                type="date"
+                value={dayjs(plan.fecha).format('YYYY-MM-DD')}
+                onChange={(e) => handlePlanFechaChange(plan.id, e.target.value)}
+              />
+              <input
+                type="text"
+                value={plan.director}
+                onChange={(e) => handlePlanDirectorChange(plan.id, e.target.value)}
+              />
+              <h4>Escenas:</h4>
+              <ul>
+                {plan.escenas.map((escena) => (
+                  <li key={escena.id}>{escena.titulo_escena}</li>
+                ))}
+              </ul>
+              <button onClick={() => handleEliminarPlan(plan.id)}>Eliminar Plan</button>
             </div>
           ))}
         </div>
@@ -687,6 +739,20 @@ const PlanDeRodaje = ({ onClose }) => {
           )}
         </div>
       </div>
+      {showAsignarItems && (
+        <AsignarItemsFecha
+          onClose={() => setShowAsignarItems(false)}
+          onAsignar={handleAsignarItems}
+          fecha={fechaSeleccionada}
+        />
+      )}
+      {showRecuperarItems && (
+        <RecuperarItemsFecha
+          onClose={() => setShowRecuperarItems(false)}
+          onRecuperar={handleRecuperarItems}
+          fecha={fechaSeleccionada}
+        />
+      )}
     </div>
   );
 };
