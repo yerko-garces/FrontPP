@@ -78,32 +78,25 @@ const PlanDeRodaje = () => {
         });
         setPersonajes(personajesResponse.data);
 
-          // Recuperar locaciones
+        // Recuperar locaciones
         const locacionesResponse = await axios.get(`http://localhost:8080/api/locaciones/proyecto/${proyectoId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setLocaciones(locacionesResponse.data);        
+        setLocaciones(locacionesResponse.data);
 
         const capitulosResponse = await axios.get(`http://localhost:8080/api/capitulos/${proyectoId}`, {
           headers: { Authorization: `Bearer ${token}` },
-        });   
+        });
         const capitulosConEscenas = capitulosResponse.data.map(capitulo => ({
           ...capitulo,
           escenas: escenasResponse.data.filter(escena => escena.escena.capitulo === capitulo.id)
         }));
         setCapitulos(capitulosConEscenas);
-        const bloquesResponse = await axios.get(`http://localhost:8080/api/planes-de-rodaje/${proyectoId}/bloques`, {
+
+        const planesResponse = await axios.get(`http://localhost:8080/api/planes/proyecto/${proyectoId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const planesResponse = await axios.get(`http://localhost:8080/api/planes/${proyectoId}`, { headers: { Authorization: `Bearer ${token}` } });
-        
-        const bloquesPorDia = bloquesResponse.data.reduce((acc, bloque) => {
-          const dia = dayjs(bloque.fecha).format('YYYY-MM-DD');
-          acc[dia] = [...(acc[dia] || []), bloque];
-          return acc;
-        }, {});
-        setBloques(bloquesPorDia);
-        //NUEVO
+        setPlanes(planesResponse.data);
         fetchItemsAsignadosPorFecha();
         await fetchInventario();
       } catch (error) {
@@ -224,7 +217,7 @@ const PlanDeRodaje = () => {
   const agregarEscenaAPlan = async (planId, escena) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`http://localhost:8080/api/planes/${planId}/escenas`, escena, {
+      await axios.put(`http://localhost:8080/api/planes/${planId}/${escena.id}`, null, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const planesActualizados = planes.map(plan => {
@@ -240,37 +233,47 @@ const PlanDeRodaje = () => {
     }
   };
 
-  const handleCrearPlan = async () => {
+  const [showPlanForm, setShowPlanForm] = useState(false);
+  const [newPlan, setNewPlan] = useState({
+    titulo: '',
+    fecha: '',
+    director: ''
+  });
+
+  const handleCrearPlan = () => {
+    setShowPlanForm(true);
+  };
+
+  const handlePlanInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewPlan(prevPlan => ({
+      ...prevPlan,
+      [name]: value
+    }));
+  };
+
+  const handleSubmitPlan = async (e) => {
+    e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const nuevoPlan = {
-        titulo: "Nuevo Plan",
-        fecha: new Date(),
-        director: proyecto.director || '',
-        proyectoId: proyectoId
-      };
-      const response = await axios.post('http://localhost:8080/api/planes', nuevoPlan, {
+      const response = await axios.post('http://localhost:8080/api/planes/', {
+        ...newPlan,
+        fecha: dayjs(newPlan.fecha).format('YYYY-MM-DD'),
+        escenas: [],
+        proyecto: { id: proyectoId }
+      }, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setPlanes([...planes, response.data]);
+      setShowPlanForm(false);
+      setNewPlan({ titulo: '', fecha: '', director: '' });
     } catch (error) {
       console.error('Error al crear nuevo plan:', error);
       alert('Error al crear nuevo plan');
     }
   };
 
-  const handleGuardarPlanes = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put('http://localhost:8080/api/planes', planes, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      alert('Planes guardados correctamente');
-    } catch (error) {
-      console.error('Error al guardar los planes:', error);
-      alert('Error al guardar los planes');
-    }
-  };
+
 
 
   const handleEliminarPlan = async (id) => {
@@ -287,108 +290,45 @@ const PlanDeRodaje = () => {
     }
   };
 
+  const handlePlanTituloChange = (id, nuevoTitulo) => {
+    setPlanes(planes.map(plan =>
+      plan.id === id ? { ...plan, titulo: nuevoTitulo } : plan
+    ));
+  };
+
+  const handlePlanFechaChange = (id, nuevaFecha) => {
+    setPlanes(planes.map(plan =>
+      plan.id === id ? { ...plan, fecha: nuevaFecha } : plan
+    ));
+  };
+
+  const handlePlanDirectorChange = (id, nuevoDirector) => {
+    setPlanes(planes.map(plan =>
+      plan.id === id ? { ...plan, director: nuevoDirector } : plan
+    ));
+  };
+
+  const handleGuardarPlanes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await Promise.all(planes.map(plan =>
+        axios.put(`http://localhost:8080/api/planes/${plan.id}`, plan, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      ));
+      alert('Planes guardados correctamente');
+    } catch (error) {
+      console.error('Error al guardar los planes:', error);
+      alert('Error al guardar los planes');
+    }
+  };
+
 
   const handleFiltroChange = (e) => {
     setFiltro(e.target.value);
   };
-  const handleGuardarTodosBloques = async () => {
-    const token = localStorage.getItem('token');
-    const bloquesAGuardar = Object.entries(bloques).flatMap(([dia, bloquesPorDia]) =>
-      bloquesPorDia.map((bloque) => {
-        const bloqueFormulario = bloqueFormularios[dia]
-          ? bloqueFormularios[dia][bloque.id] || {}
-          : {};
-        const titulo = bloqueFormulario.titulo !== undefined ? bloqueFormulario.titulo : bloque.titulo || '';
-        const fechaObj = bloqueFormulario.fecha !== undefined ? bloqueFormulario.fecha : bloque.fecha;
-        const horaObj = bloqueFormulario.hora !== undefined ? bloqueFormulario.hora : bloque.hora;
-        const fecha = fechaObj instanceof Date ? dayjs(fechaObj).format('YYYY-MM-DD') : fechaObj;
-        const hora = horaObj instanceof Date ? `${horaObj.getHours().toString().padStart(2, '0')}:${horaObj.getMinutes().toString().padStart(2, '0')}` : horaObj;
-        return formatearBloque({ ...bloque, titulo, fecha, hora });
-      })
-    );
-    try {
-      await axios.put('http://localhost:8080/api/bloques/actualizar', bloquesAGuardar, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      alert('Bloques guardados correctamente');
-    } catch (error) {
-      console.error('Error al guardar los bloques:', error.response ? error.response.data : error.message);
-      alert('Error al guardar los bloques');
-    }
-  };
-  const formatearBloque = (bloque) => {
-    let horaDate;
-    if (typeof bloque.hora === 'string') {
-      // Si bloque.hora es una cadena de texto, convertirla a un objeto Date
-      const [horas, minutos] = bloque.hora.split(':');
-      horaDate = new Date();
-      horaDate.setHours(parseInt(horas, 10));
-      horaDate.setMinutes(parseInt(minutos, 10));
-    } else {
-      horaDate = bloque.hora;
-    }
-    const bloqueFormateado = {
-      planDeRodaje: {
-        id: proyectoId,
-      },
-      titulo: bloque.titulo !== undefined ? bloque.titulo : null,
-      fecha: dayjs(bloque.fecha).isValid() ? dayjs(bloque.fecha).format('YYYY-MM-DD') : '',
-      posicion: bloque.posicion,
-      escena: bloque.escena?.id ? { id: bloque.escena.id } : null,
-      id: bloque.id || null,
-      hora: horaDate ? `${horaDate.getHours().toString().padStart(2, '0')}:${horaDate.getMinutes().toString().padStart(2, '0')}` : null,
-    };
-    return bloqueFormateado;
-  };
-  const handleEliminarBloque = async (id, dia) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:8080/api/bloques/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setBloques((prevBloques) => {
-        const nuevoBloques = { ...prevBloques };
-        nuevoBloques[dia] = prevBloques[dia].filter((bloque) => bloque.id !== id);
-        return nuevoBloques;
-      });
-      alert('Bloque eliminado correctamente');
-    } catch (error) {
-      console.error('Error al eliminar el bloque:', error);
-      alert('Error al eliminar el bloque');
-    }
-  };
-  const handleDrop = (e, dia, indexDestino) => {
-    e.preventDefault();
-    let bloqueData;
-    try {
-      bloqueData = JSON.parse(e.dataTransfer.getData('bloqueData'));
-    } catch (error) {
-      alert('El elemento arrastrado no es válido');
-      return;
-    }
-    const { escena, fecha, hora } = bloqueData;
-    if (!escena) {
-      alert('El elemento arrastrado no es una escena válida');
-      return;
-    }
-    const nuevoBloque = {
-      escena: { ...escena },
-      fecha: new Date(),
-      hora: new Date(),
-      titulo: '',
-      posicion: bloques[dia]?.length + 1 || 1,
-    };
-    setBloques((prevBloques) => {
-      const nuevoBloques = { ...prevBloques };
-      if (indexDestino !== undefined) {
-        nuevoBloques[dia].splice(indexDestino, 0, nuevoBloque);
-      } else {
-        nuevoBloques[dia] = [...(nuevoBloques[dia] || []), nuevoBloque];
-      }
-      return nuevoBloques;
-    });
-    setDraggedItem(null);
-  };
+
+
   const handleDiaNocheFiltroChange = (e) => {
     setDiaNocheFiltro(e.target.value);
   };
@@ -432,29 +372,8 @@ const PlanDeRodaje = () => {
     // Guardar el PDF
     doc.save('plan_de_rodaje.pdf');
   };
-  const [bloqueFormularios, setBloqueFormularios] = useState({});
-  const actualizarBloqueFormulario = (bloqueId, nuevoValor, campo, dia) => {
-    setBloqueFormularios((prevBloqueFormularios) => {
-      const nuevosBloqueFormularios = { ...prevBloqueFormularios };
-      const bloqueFormulario = nuevosBloqueFormularios[dia]
-        ? { ...nuevosBloqueFormularios[dia] }
-        : {};
-      const nuevoBloque = { ...bloqueFormulario[bloqueId] };
-      nuevoBloque[campo] = nuevoValor;
-      bloqueFormulario[bloqueId] = nuevoBloque;
-      nuevosBloqueFormularios[dia] = bloqueFormulario;
-      return nuevosBloqueFormularios;
-    });
-  };
-  const handleTituloChange = (bloqueId, nuevoTitulo, dia) => {
-    actualizarBloqueFormulario(bloqueId, nuevoTitulo, 'titulo', dia);
-  };
-  const handleFechaChange = (bloqueId, nuevaFecha, dia) => {
-    actualizarBloqueFormulario(bloqueId, nuevaFecha, 'fecha', dia);
-  };
-  const handleHoraChange = (bloqueId, nuevaHora, dia) => {
-    actualizarBloqueFormulario(bloqueId, nuevaHora, 'hora', dia);
-  };
+
+
   const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro, personajeFiltro, locacionFiltro);
   //NUEVOOOO
   const fetchItemsAsignadosPorFecha = async () => {
@@ -617,38 +536,28 @@ const PlanDeRodaje = () => {
         </div>
         <div className="planes-container">
           <button className="crear-plan-btn" onClick={handleCrearPlan}>Crear Nuevo Plan</button>
-          {planes.map((plan) => (
-            <div
-              key={plan.id}
-              className="plan-item"
-              ref={(el) => (planesRefs.current[plan.id] = el)}
-              data-plan-id={plan.id}
-            >
-              <h3>{plan.titulo}</h3>
-              <input
-                type="text"
-                value={plan.titulo}
-                onChange={(e) => handlePlanTituloChange(plan.id, e.target.value)}
-              />
-              <input
-                type="date"
-                value={dayjs(plan.fecha).format('YYYY-MM-DD')}
-                onChange={(e) => handlePlanFechaChange(plan.id, e.target.value)}
-              />
-              <input
-                type="text"
-                value={plan.director}
-                onChange={(e) => handlePlanDirectorChange(plan.id, e.target.value)}
-              />
-              <h4>Escenas:</h4>
-              <ul>
-                {plan.escenas.map((escena) => (
-                  <li key={escena.id}>{escena.titulo_escena}</li>
-                ))}
-              </ul>
-              <button onClick={() => handleEliminarPlan(plan.id)}>Eliminar Plan</button>
-            </div>
-          ))}
+          {planes.length > 0 ? (
+            planes.map((plan) => (
+              <div key={plan.id} className="plan-item">
+                <h3>{plan.titulo}</h3>
+                <p>Fecha: {dayjs(plan.fecha).format('DD/MM/YYYY')}</p>
+                <p>Director: {plan.director}</p>
+                <h4>Escenas:</h4>
+                {plan.escenas && plan.escenas.length > 0 ? (
+                  <ul>
+                    {plan.escenas.map((escena) => (
+                      <li key={escena.id}>{escena.titulo_escena || 'Sin título'}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No hay escenas asignadas a este plan.</p>
+                )}
+                <button onClick={() => handleEliminarPlan(plan.id)}>Eliminar Plan</button>
+              </div>
+            ))
+          ) : (
+            <p>No hay planes creados aún.</p>
+          )}
         </div>
         <div className={`inventario-container ${showInventario ? 'visible' : ''}`}>
           <button className="inventario-toggle" onClick={toggleInventario}>
@@ -752,6 +661,42 @@ const PlanDeRodaje = () => {
           onRecuperar={handleRecuperarItems}
           fecha={fechaSeleccionada}
         />
+      )}
+
+
+      {showPlanForm && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Crear Nuevo Plan</h2>
+            <form onSubmit={handleSubmitPlan}>
+              <input
+                type="text"
+                name="titulo"
+                value={newPlan.titulo}
+                onChange={handlePlanInputChange}
+                placeholder="Título del plan"
+                required
+              />
+              <input
+                type="date"
+                name="fecha"
+                value={newPlan.fecha}
+                onChange={handlePlanInputChange}
+                required
+              />
+              <input
+                type="text"
+                name="director"
+                value={newPlan.director}
+                onChange={handlePlanInputChange}
+                placeholder="Director"
+                required
+              />
+              <button type="submit">Crear Plan</button>
+              <button type="button" onClick={() => setShowPlanForm(false)}>Cancelar</button>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
