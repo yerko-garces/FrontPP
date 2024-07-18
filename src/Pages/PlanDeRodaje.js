@@ -176,7 +176,7 @@ const PlanDeRodaje = () => {
       if (escenasContainer) {
         Sortable.create(escenasContainer, {
           group: {
-            name: 'shared',
+            name: 'escenas',
             pull: 'clone',
             put: false
           },
@@ -191,28 +191,36 @@ const PlanDeRodaje = () => {
       }
     });
 
-    Object.keys(planesRefs.current).forEach((planId) => {
-      if (planesRefs.current[planId]) {
-        Sortable.create(planesRefs.current[planId], {
-          group: 'planes',
+    planes.forEach((plan) => {
+      const planContainer = document.getElementById(`plan-container-${plan.id}`);
+      if (planContainer) {
+        Sortable.create(planContainer, {
+          group: {
+            name: 'planes',
+            put: ['escenas']  // Permite recibir elementos del grupo 'escenas'
+          },
           animation: 150,
           onAdd: (evt) => {
+            console.log('Evento onAdd activado', evt);
             const escenaId = evt.item.getAttribute('data-id');
             const planId = evt.to.getAttribute('data-plan-id');
             if (planId) {
               const escena = escenas.find((e) => e.id === parseInt(escenaId));
-              if (!escena) {
-                alert('El elemento arrastrado no es una escena válida');
-                return;
+              if (escena) {
+                agregarEscenaAPlan(planId, escena);
               }
-              agregarEscenaAPlan(planId, escena);
             }
-            evt.item.remove();
+            evt.item.remove(); // Eliminar el elemento clonado
           },
+          onUpdate: (evt) => {
+            const planId = evt.to.getAttribute('data-plan-id');
+            const newOrder = Array.from(evt.to.children).map(item => parseInt(item.getAttribute('data-id')));
+            actualizarOrdenEscenas(planId, newOrder);
+          }
         });
       }
     });
-  }, [proyectoId, navigate, escenas, planes, capitulos]);
+  }, [capitulos, planes, escenas]);
 
   const agregarEscenaAPlan = async (planId, escena) => {
     try {
@@ -220,16 +228,34 @@ const PlanDeRodaje = () => {
       await axios.put(`http://localhost:8080/api/planes/${planId}/${escena.id}`, null, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      setPlanes(prevPlanes => prevPlanes.map(plan => {
+        if (plan.id === parseInt(planId)) {
+          return { ...plan, escenas: [...(plan.escenas || []), escena] };
+        }
+        return plan;
+      }));
+    } catch (error) {
+      console.error('Error al agregar escena al plan:', error);
+      alert('Error al agregar escena al plan');
+    }
+  };
+  const actualizarOrdenEscenas = async (planId, newOrder) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`http://localhost:8080/api/planes/${planId}/escenas`, newOrder, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const planesActualizados = planes.map(plan => {
         if (plan.id === parseInt(planId)) {
-          return { ...plan, escenas: [...plan.escenas, escena] };
+          const escenasOrdenadas = newOrder.map(id => plan.escenas.find(e => e.id === id));
+          return { ...plan, escenas: escenasOrdenadas };
         }
         return plan;
       });
       setPlanes(planesActualizados);
     } catch (error) {
-      console.error('Error al agregar escena al plan:', error);
-      alert('Error al agregar escena al plan');
+      console.error('Error al actualizar el orden de las escenas:', error);
+      alert('Error al actualizar el orden de las escenas');
     }
   };
 
@@ -540,18 +566,20 @@ const PlanDeRodaje = () => {
             planes.map((plan) => (
               <div key={plan.id} className="plan-item">
                 <h3>{plan.titulo}</h3>
-                <p>Fecha: {dayjs(plan.fecha).format('DD/MM/YYYY')}</p>
+                <p>Fecha: {new Date(plan.fecha).toLocaleDateString()}</p>
                 <p>Director: {plan.director}</p>
                 <h4>Escenas:</h4>
-                {plan.escenas && plan.escenas.length > 0 ? (
-                  <ul>
-                    {plan.escenas.map((escena) => (
-                      <li key={escena.id}>{escena.titulo_escena || 'Sin título'}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No hay escenas asignadas a este plan.</p>
-                )}
+                <div id={`plan-container-${plan.id}`} data-plan-id={plan.id} className="plan-escenas-container">
+                  {plan.escenas && plan.escenas.length > 0 ? (
+                    plan.escenas.map((escena) => (
+                      <div key={escena.id} data-id={escena.id} className="escena-item">
+                        {escena.titulo_escena || 'Sin título'}
+                      </div>
+                    ))
+                  ) : (
+                    <p>No hay escenas asignadas a este plan.</p>
+                  )}
+                </div>
                 <button onClick={() => handleEliminarPlan(plan.id)}>Eliminar Plan</button>
               </div>
             ))
