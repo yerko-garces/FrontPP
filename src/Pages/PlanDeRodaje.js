@@ -124,6 +124,17 @@ const PlanDeRodaje = () => {
       console.error('Error fetching inventory:', error);
     }
   };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e, planId) => {
+    e.preventDefault();
+    const escenaData = JSON.parse(e.dataTransfer.getData('escenaData'));
+    agregarEscenaAPlan(planId, escenaData.escena.id);
+  };
+
   const handleItemSubmit = async (item) => {
     try {
       const token = localStorage.getItem('token');
@@ -171,66 +182,81 @@ const PlanDeRodaje = () => {
     setShowInventario(!showInventario);
   };
   useEffect(() => {
-    capitulos.forEach(capitulo => {
-      const escenasContainer = document.getElementById(`escenas-container-${capitulo.id}`);
-      if (escenasContainer) {
-        Sortable.create(escenasContainer, {
+    capitulos.forEach((capitulo) => {
+      const escenasContainers = document.querySelectorAll('.escenas-container');
+      escenasContainers.forEach((container) => {
+        Sortable.create(container, {
           group: {
             name: 'escenas',
             pull: 'clone',
-            put: false
+            put: false,
           },
           animation: 150,
           sort: false,
-          onEnd: (evt) => {
-            if (evt.from !== evt.to) {
-              evt.from.appendChild(evt.item);
-            }
-          }
         });
-      }
-    });
+      });
 
-    planes.forEach((plan) => {
-      const planContainer = document.getElementById(`plan-container-${plan.id}`);
-      if (planContainer) {
-        Sortable.create(planContainer, {
-          group: {
-            name: 'planes',
-            put: ['escenas']  // Permite recibir elementos del grupo 'escenas'
-          },
-          animation: 150,
-          onAdd: (evt) => {
-            console.log('Evento onAdd activado', evt);
-            const escenaId = evt.item.getAttribute('data-id');
-            const planId = evt.to.getAttribute('data-plan-id');
-            if (planId) {
-              const escena = escenas.find((e) => e.id === parseInt(escenaId));
-              if (escena) {
-                agregarEscenaAPlan(planId, escena);
+      planes.forEach((plan) => {
+        const planContainer = document.getElementById(`plan-container-${plan.id}`);
+        if (planContainer) {
+          Sortable.create(planContainer, {
+            group: {
+              name: 'planes',
+              put: ['escenas']  // Permite recibir elementos del grupo 'escenas'
+            },
+            animation: 150,
+            onAdd: (evt) => {
+              console.log('Evento onAdd activado', evt);
+              const escenaId = evt.item.getAttribute('data-id');
+              const planId = evt.to.getAttribute('data-plan-id');
+              if (planId) {
+                agregarEscenaAPlan(planId, escenaId);
               }
+              evt.item.remove(); // Eliminar el elemento clonado
+            },
+            onUpdate: (evt) => {
+              const planId = evt.to.getAttribute('data-plan-id');
+              const newOrder = Array.from(evt.to.children).map(item => parseInt(item.getAttribute('data-id')));
+              actualizarOrdenEscenas(planId, newOrder);
             }
-            evt.item.remove(); // Eliminar el elemento clonado
-          },
-          onUpdate: (evt) => {
-            const planId = evt.to.getAttribute('data-plan-id');
-            const newOrder = Array.from(evt.to.children).map(item => parseInt(item.getAttribute('data-id')));
-            actualizarOrdenEscenas(planId, newOrder);
-          }
-        });
-      }
-    });
-  }, [capitulos, planes, escenas]);
+          });
+        }
+      });
+    }, [capitulos, planes, escenas]);
 
-  const agregarEscenaAPlan = async (planId, escena) => {
+    const planesContainers = document.querySelectorAll('.planes-container');
+    planesContainers.forEach((container) => {
+      Sortable.create(container, {
+        group: {
+          name: 'planes',
+          put: ['escenas'],
+        },
+        animation: 150,
+        onAdd: (evt) => {
+          const escenaId = evt.item.getAttribute('data-id');
+          const planId = container.getAttribute('data-plan-id');
+          agregarEscenaAPlan(planId, escenaId);
+          evt.item.remove(); // Eliminar el elemento clonado
+        },
+        onUpdate: (evt) => {
+          const planId = container.getAttribute('data-plan-id');
+          const newOrder = Array.from(evt.to.children).map((item) => parseInt(item.getAttribute('data-id')));
+          actualizarOrdenEscenas(planId, newOrder);
+        },
+      });
+    });
+  }, [planes, escenas]);
+
+  const agregarEscenaAPlan = async (planId, escenaId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:8080/api/planes/${planId}/${escena.id}`, null, {
+      await axios.put(`http://localhost:8080/api/planes/${planId}/${escenaId}`, null, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      // Actualizar el estado localmente
       setPlanes(prevPlanes => prevPlanes.map(plan => {
-        if (plan.id === parseInt(planId)) {
-          return { ...plan, escenas: [...(plan.escenas || []), escena] };
+        if (plan.id === planId) {
+          return { ...plan, escenas: [...plan.escenas, { id: escenaId }] };
         }
         return plan;
       }));
@@ -239,6 +265,7 @@ const PlanDeRodaje = () => {
       alert('Error al agregar escena al plan');
     }
   };
+
   const actualizarOrdenEscenas = async (planId, newOrder) => {
     try {
       const token = localStorage.getItem('token');
@@ -378,27 +405,13 @@ const PlanDeRodaje = () => {
     doc.text(`Director: ${proyecto.director || 'No especificado'}`, 20, 50);
     // Agregar información de los bloques
     let yPos = 70;
-    Object.entries(bloques).forEach(([dia, bloquesDia]) => {
-      doc.setFontSize(14);
-      doc.text(`Día: ${dia}`, 20, yPos);
-      yPos += 10;
-      bloquesDia.forEach((bloque, index) => {
-        doc.setFontSize(10);
-        doc.text(`Bloque ${index + 1}: ${bloque.titulo || 'Sin título'}`, 30, yPos);
-        doc.text(`Escena: ${bloque.escena?.titulo_escena || 'Sin título'}`, 40, yPos + 5);
-        doc.text(`Hora: ${bloque.hora || 'No especificada'}`, 40, yPos + 10);
-        yPos += 20;
-        if (yPos > 280) {  // Si estamos cerca del final de la página
-          doc.addPage();  // Agregar una nueva página
-          yPos = 20;  // Reiniciar la posición Y
-        }
-      });
-      yPos += 10;  // Espacio entre días
-    });
     // Guardar el PDF
     doc.save('plan_de_rodaje.pdf');
   };
 
+  const handleDragStart = (e, escena) => {
+    e.dataTransfer.setData('escenaData', JSON.stringify(escena));
+  };
 
   const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro, personajeFiltro, locacionFiltro);
   //NUEVOOOO
@@ -537,13 +550,13 @@ const PlanDeRodaje = () => {
               </button>
               {capitulosActivos.has(capitulo.id) && (
                 <div id={`escenas-container-${capitulo.id}`} className="escenas-list-container">
+
                   <ul>
                     {escenasFiltradas.filter(escenaObj => escenaObj.escena.capitulo === capitulo.id).map(escenaObj => (
                       <li
                         key={escenaObj.escena.id}
                         className="escena-item"
-                        data-id={escenaObj.escena.id}
-                        draggable
+                        draggable="true"
                         onDragStart={(e) => {
                           const escenaData = JSON.stringify(escenaObj);
                           e.dataTransfer.setData('escenaData', escenaData);
@@ -569,10 +582,16 @@ const PlanDeRodaje = () => {
                 <p>Fecha: {new Date(plan.fecha).toLocaleDateString()}</p>
                 <p>Director: {plan.director}</p>
                 <h4>Escenas:</h4>
-                <div id={`plan-container-${plan.id}`} data-plan-id={plan.id} className="plan-escenas-container">
+                <div
+                  id={`plan-container-${plan.id}`}
+                  data-plan-id={plan.id}
+                  className="plan-escenas-container"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => handleDrop(e, plan.id)}
+                >
                   {plan.escenas && plan.escenas.length > 0 ? (
                     plan.escenas.map((escena) => (
-                      <div key={escena.id} data-id={escena.id} className="escena-item">
+                      <div key={escena.id} className="escena-item">
                         {escena.titulo_escena || 'Sin título'}
                       </div>
                     ))

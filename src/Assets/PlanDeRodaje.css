@@ -228,3 +228,13 @@
 .modal-content button {
   margin-top: 10px;
 }
+
+.plan-de-rodaje-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Dos columnas de igual tamaño */
+}
+
+/* Elimina los estilos específicos de width y float de .escenas-container */
+.escenas-container, .planes-container {
+  box-sizing: border-box; 
+}
