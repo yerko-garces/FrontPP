@@ -411,9 +411,9 @@ const PlanDeRodaje = () => {
   };
 
   const handleDragStart = (e, escena) => {
-    e.dataTransfer.setData('application/json', JSON.stringify(escena));
-    e.dataTransfer.effectAllowed = 'copy'; // Esto indica que es una operación de copia, no de movimiento
-  };
+  e.dataTransfer.setData('application/json', JSON.stringify(escena));
+  e.dataTransfer.effectAllowed = 'copy'; // Esto indica que es una operación de copia, no de movimiento
+};
 
   const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro, personajeFiltro, locacionFiltro);
   //NUEVOOOO
@@ -592,6 +592,10 @@ const PlanDeRodaje = () => {
                     plan.escenas.map((escena) => (
                       <div key={escena.id} className="escena-item" data-id={escena.id}>
                         {escena.titulo_escena || 'Sin título'}
+                        {escena.resumen && <p>{escena.resumen}</p>}
+                        {escena.diaNoche && <p>{escena.diaNoche}</p>}
+                        
+
                       </div>
                     ))
                   ) : (
