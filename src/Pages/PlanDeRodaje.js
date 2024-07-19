@@ -131,8 +131,8 @@ const PlanDeRodaje = () => {
 
   const handleDrop = (e, planId) => {
     e.preventDefault();
-    const escenaData = JSON.parse(e.dataTransfer.getData('escenaData'));
-    agregarEscenaAPlan(planId, escenaData.escena.id);
+    const escenaData = JSON.parse(e.dataTransfer.getData('application/json'));
+    agregarEscenasAPlan(planId, [escenaData.escena.id]);
   };
 
   const handleItemSubmit = async (item) => {
@@ -183,9 +183,9 @@ const PlanDeRodaje = () => {
   };
   useEffect(() => {
     capitulos.forEach((capitulo) => {
-      const escenasContainers = document.querySelectorAll('.escenas-container');
-      escenasContainers.forEach((container) => {
-        Sortable.create(container, {
+      const escenasContainer = document.getElementById(`escenas-container-${capitulo.id}`);
+      if (escenasContainer) {
+        Sortable.create(escenasContainer, {
           group: {
             name: 'escenas',
             pull: 'clone',
@@ -193,59 +193,37 @@ const PlanDeRodaje = () => {
           },
           animation: 150,
           sort: false,
+          draggable: ".escena-item", // Asegura que solo los elementos con esta clase sean arrastrables
         });
-      });
-
-      planes.forEach((plan) => {
-        const planContainer = document.getElementById(`plan-container-${plan.id}`);
-        if (planContainer) {
-          Sortable.create(planContainer, {
-            group: {
-              name: 'planes',
-              put: ['escenas']  // Permite recibir elementos del grupo 'escenas'
-            },
-            animation: 150,
-            onAdd: (evt) => {
-              console.log('Evento onAdd activado', evt);
-              const escenaId = evt.item.getAttribute('data-id');
-              const planId = evt.to.getAttribute('data-plan-id');
-              if (planId) {
-                agregarEscenaAPlan(planId, escenaId);
-              }
-              evt.item.remove(); // Eliminar el elemento clonado
-            },
-            onUpdate: (evt) => {
-              const planId = evt.to.getAttribute('data-plan-id');
-              const newOrder = Array.from(evt.to.children).map(item => parseInt(item.getAttribute('data-id')));
-              actualizarOrdenEscenas(planId, newOrder);
-            }
-          });
-        }
-      });
-    }, [capitulos, planes, escenas]);
-
-    const planesContainers = document.querySelectorAll('.planes-container');
-    planesContainers.forEach((container) => {
-      Sortable.create(container, {
-        group: {
-          name: 'planes',
-          put: ['escenas'],
-        },
-        animation: 150,
-        onAdd: (evt) => {
-          const escenaId = evt.item.getAttribute('data-id');
-          const planId = container.getAttribute('data-plan-id');
-          agregarEscenaAPlan(planId, escenaId);
-          evt.item.remove(); // Eliminar el elemento clonado
-        },
-        onUpdate: (evt) => {
-          const planId = container.getAttribute('data-plan-id');
-          const newOrder = Array.from(evt.to.children).map((item) => parseInt(item.getAttribute('data-id')));
-          actualizarOrdenEscenas(planId, newOrder);
-        },
-      });
+      }
     });
-  }, [planes, escenas]);
+
+    planes.forEach((plan) => {
+      const planContainer = document.getElementById(`plan-container-${plan.id}`);
+      if (planContainer) {
+        Sortable.create(planContainer, {
+          group: {
+            name: 'planes',
+            put: ['escenas']
+          },
+          animation: 150,
+          onAdd: (evt) => {
+            const escenaId = parseInt(evt.item.getAttribute('data-id'));
+            const planId = parseInt(evt.to.getAttribute('data-plan-id'));
+            if (planId) {
+              agregarEscenasAPlan(planId, [escenaId]);
+            }
+            evt.item.remove(); // Eliminar el elemento clonado
+          },
+          onUpdate: (evt) => {
+            const planId = parseInt(evt.to.getAttribute('data-plan-id'));
+            const newOrder = Array.from(evt.to.children).map(item => parseInt(item.getAttribute('data-id')));
+            actualizarOrdenEscenas(planId, newOrder);
+          }
+        });
+      }
+    });
+  }, [capitulos, planes, escenas]);
 
   const agregarEscenaAPlan = async (planId, escenaId) => {
     try {
@@ -256,13 +234,36 @@ const PlanDeRodaje = () => {
       // Actualizar el estado localmente
       setPlanes(prevPlanes => prevPlanes.map(plan => {
         if (plan.id === planId) {
-          return { ...plan, escenas: [...plan.escenas, { id: escenaId }] };
+          const escenaCompleta = escenas.find(e => e.escena.id === escenaId);
+          return { ...plan, escenas: [...plan.escenas, escenaCompleta.escena] };
         }
         return plan;
       }));
     } catch (error) {
       console.error('Error al agregar escena al plan:', error);
       alert('Error al agregar escena al plan');
+    }
+  };
+
+  const agregarEscenasAPlan = async (planId, escenaIds) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`http://localhost:8080/api/planes/${planId}/escenas`, escenaIds, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Actualizar el estado localmente
+      setPlanes(prevPlanes => prevPlanes.map(plan => {
+        if (plan.id === planId) {
+          const nuevasEscenas = escenaIds.map(id =>
+            escenas.find(e => e.escena.id === id).escena
+          );
+          return { ...plan, escenas: [...plan.escenas, ...nuevasEscenas] };
+        }
+        return plan;
+      }));
+    } catch (error) {
+      console.error('Error al agregar escenas al plan:', error);
+      alert('Error al agregar escenas al plan');
     }
   };
 
@@ -410,7 +411,8 @@ const PlanDeRodaje = () => {
   };
 
   const handleDragStart = (e, escena) => {
-    e.dataTransfer.setData('escenaData', JSON.stringify(escena));
+    e.dataTransfer.setData('application/json', JSON.stringify(escena));
+    e.dataTransfer.effectAllowed = 'copy'; // Esto indica que es una operación de copia, no de movimiento
   };
 
   const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro, personajeFiltro, locacionFiltro);
@@ -550,17 +552,14 @@ const PlanDeRodaje = () => {
               </button>
               {capitulosActivos.has(capitulo.id) && (
                 <div id={`escenas-container-${capitulo.id}`} className="escenas-list-container">
-
                   <ul>
                     {escenasFiltradas.filter(escenaObj => escenaObj.escena.capitulo === capitulo.id).map(escenaObj => (
                       <li
                         key={escenaObj.escena.id}
                         className="escena-item"
                         draggable="true"
-                        onDragStart={(e) => {
-                          const escenaData = JSON.stringify(escenaObj);
-                          e.dataTransfer.setData('escenaData', escenaData);
-                        }}
+                        onDragStart={(e) => handleDragStart(e, escenaObj)}
+                        data-id={escenaObj.escena.id}
                       >
                         <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
                         <span>{escenaObj.escena.resumen}</span>
@@ -591,7 +590,7 @@ const PlanDeRodaje = () => {
                 >
                   {plan.escenas && plan.escenas.length > 0 ? (
                     plan.escenas.map((escena) => (
-                      <div key={escena.id} className="escena-item">
+                      <div key={escena.id} className="escena-item" data-id={escena.id}>
                         {escena.titulo_escena || 'Sin título'}
                       </div>
                     ))

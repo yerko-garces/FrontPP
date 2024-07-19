@@ -69,6 +69,7 @@
 }
 
 .capitulo-container {
+  cursor: default;
   margin-bottom: 20px;
 }
 
@@ -100,6 +101,7 @@
 }
 
 .escena-item {
+  cursor: move;
   background-color: #fff;
   padding: 10px;
   margin-bottom: 5px;
