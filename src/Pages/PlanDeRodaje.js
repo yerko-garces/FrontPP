@@ -5,11 +5,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import Sortable from 'sortablejs';
 import '../Assets/PlanDeRodaje.css';
-import DiaDeRodaje from './DiaDeRodaje';
 import AsignarItemsFecha from './AsignarItemsFecha';
 import RecuperarItemsFecha from './RecuperarItemsFecha';
 import jsPDF from 'jspdf';
-import html2pdf from 'html2pdf.js';
 import ItemForm from './ItemForm';
 
 const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter, personajeFilter, locacionFilter) => {
@@ -56,6 +54,8 @@ const PlanDeRodaje = () => {
   const [itemsAsignadosPorFecha, setItemsAsignadosPorFecha] = useState({});
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
   const [showRecuperarItems, setShowRecuperarItems] = useState(false);
+  const [escenasEnPlanesTemp, setEscenasEnPlanesTemp] = useState({});
+
 
   useEffect(() => {
     if (!proyectoId) {
@@ -129,11 +129,46 @@ const PlanDeRodaje = () => {
     e.preventDefault();
   };
 
-  const handleDrop = (e, planId) => {
+  const handleDrop = (e) => {
     e.preventDefault();
-    const escenaData = JSON.parse(e.dataTransfer.getData('application/json'));
-    agregarEscenasAPlan(planId, [escenaData.escena.id]);
+
+    const jsonData = e.dataTransfer.getData('application/json');
+
+    try {
+      const escenaData = JSON.parse(jsonData);
+      if (!escenaData || !escenaData.escena || !escenaData.escena.id) {
+        console.warn('Invalid scene data');
+        return;
+      }
+
+      const dropTarget = e.target.closest('.plan-item');
+
+      if (dropTarget) {
+        const planId = parseInt(dropTarget.getAttribute('data-plan-id'));
+
+        if (!isNaN(planId)) {
+          agregarEscenasAPlan(planId, [escenaData.escena.id]);
+          console.log("Escena agregada al plan:", planId); // Agrega esta línea para depurar
+        } else {
+          console.error('Invalid plan ID:', planId);
+          alert('No se pudo determinar el plan de destino. Intenta nuevamente.');
+        }
+      } else {
+        alert('Suelta la escena dentro de un plan válido.');
+      }
+
+    } catch (error) {
+      console.error('Error parsing scene data:', error);
+      alert('Error: The dragged element does not have the correct format.');
+    }
   };
+
+const agregarEscenasAPlan = (planId, escenaIds) => {
+    setEscenasEnPlanesTemp(prev => ({
+        ...prev,
+        [planId]: [...(prev[planId] || []), ...escenaIds] // Concatenar nuevas escenas
+    }));
+};
 
   const handleItemSubmit = async (item) => {
     try {
@@ -155,6 +190,7 @@ const PlanDeRodaje = () => {
       console.error(error);
     }
   };
+
   const handleItemEdit = (item) => {
     setEditingItem(item);
     setShowItemForm(true);
@@ -202,70 +238,21 @@ const PlanDeRodaje = () => {
       const planContainer = document.getElementById(`plan-container-${plan.id}`);
       if (planContainer) {
         Sortable.create(planContainer, {
-          group: {
-            name: 'planes',
-            put: ['escenas']
-          },
+          group: { name: 'planes', put: ['escenas'] },
           animation: 150,
-          onAdd: (evt) => {
-            const escenaId = parseInt(evt.item.getAttribute('data-id'));
-            const planId = parseInt(evt.to.getAttribute('data-plan-id'));
-            if (planId) {
+          onEnd: (evt) => {
+            if (evt.to !== evt.from) {
+              const escenaId = parseInt(evt.item.getAttribute('data-id'));
+              const planId = parseInt(evt.to.getAttribute('data-plan-id'));
               agregarEscenasAPlan(planId, [escenaId]);
             }
-            evt.item.remove(); // Eliminar el elemento clonado
-          },
-          onUpdate: (evt) => {
-            const planId = parseInt(evt.to.getAttribute('data-plan-id'));
-            const newOrder = Array.from(evt.to.children).map(item => parseInt(item.getAttribute('data-id')));
-            actualizarOrdenEscenas(planId, newOrder);
+            evt.item.remove();
           }
         });
       }
     });
   }, [capitulos, planes, escenas]);
 
-  const agregarEscenaAPlan = async (planId, escenaId) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:8080/api/planes/${planId}/${escenaId}`, null, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      // Actualizar el estado localmente
-      setPlanes(prevPlanes => prevPlanes.map(plan => {
-        if (plan.id === planId) {
-          const escenaCompleta = escenas.find(e => e.escena.id === escenaId);
-          return { ...plan, escenas: [...plan.escenas, escenaCompleta.escena] };
-        }
-        return plan;
-      }));
-    } catch (error) {
-      console.error('Error al agregar escena al plan:', error);
-      alert('Error al agregar escena al plan');
-    }
-  };
-
-  const agregarEscenasAPlan = async (planId, escenaIds) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:8080/api/planes/${planId}/escenas`, escenaIds, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      // Actualizar el estado localmente
-      setPlanes(prevPlanes => prevPlanes.map(plan => {
-        if (plan.id === planId) {
-          const nuevasEscenas = escenaIds.map(id =>
-            escenas.find(e => e.escena.id === id).escena
-          );
-          return { ...plan, escenas: [...plan.escenas, ...nuevasEscenas] };
-        }
-        return plan;
-      }));
-    } catch (error) {
-      console.error('Error al agregar escenas al plan:', error);
-      alert('Error al agregar escenas al plan');
-    }
-  };
 
   const actualizarOrdenEscenas = async (planId, newOrder) => {
     try {
@@ -311,13 +298,14 @@ const PlanDeRodaje = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post('http://localhost:8080/api/planes/', {
-        ...newPlan,
+        titulo: newPlan.titulo,
         fecha: dayjs(newPlan.fecha).format('YYYY-MM-DD'),
-        escenas: [],
-        proyecto: { id: proyectoId }
+        director: newPlan.director,
+        proyecto: { id: proyectoId } // Solo enviamos el ID del proyecto
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       setPlanes([...planes, response.data]);
       setShowPlanForm(false);
       setNewPlan({ titulo: '', fecha: '', director: '' });
@@ -364,18 +352,34 @@ const PlanDeRodaje = () => {
 
   const handleGuardarPlanes = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await Promise.all(planes.map(plan =>
-        axios.put(`http://localhost:8080/api/planes/${plan.id}`, plan, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-      ));
-      alert('Planes guardados correctamente');
+        const token = localStorage.getItem('token');
+        for (const planId in escenasEnPlanesTemp) {
+            const escenaIds = escenasEnPlanesTemp[planId];
+            const elementos = escenaIds.map((escenaId, index) => ({
+                escena: { id: escenaId },
+                posicion: index + 1
+            }));
+
+            await axios.put(
+                `http://localhost:8080/api/planes/${planId}/elementos/`,
+                elementos,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            // Actualizar el estado de planes (opcional, si quieres reflejar los cambios en la interfaz)
+            setPlanes(prevPlanes => prevPlanes.map(plan =>
+                plan.id === parseInt(planId) ? { ...plan, escenas: elementos.map(el => el.escena) } : plan
+            ));
+        }
+        setEscenasEnPlanesTemp({});  // Limpiar escenas temporales después de guardar
+        alert('Planes guardados correctamente');
     } catch (error) {
-      console.error('Error al guardar los planes:', error);
-      alert('Error al guardar los planes');
+        console.error('Error al guardar los planes:', error);
+        alert('Error al guardar los planes');
     }
-  };
+};
 
 
   const handleFiltroChange = (e) => {
@@ -411,9 +415,17 @@ const PlanDeRodaje = () => {
   };
 
   const handleDragStart = (e, escena) => {
-  e.dataTransfer.setData('application/json', JSON.stringify(escena));
-  e.dataTransfer.effectAllowed = 'copy'; // Esto indica que es una operación de copia, no de movimiento
-};
+    const escenaData = JSON.stringify({
+      escena: {
+        id: escena.escena.id,
+        titulo_escena: escena.escena.titulo_escena,
+        resumen: escena.escena.resumen,
+        diaNoche: escena.escena.diaNoche
+      }
+    });
+    e.dataTransfer.setData('application/json', escenaData);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
 
   const escenasFiltradas = filterItems(escenas, filtro, diaNocheFiltro, interiorExteriorFiltro, personajeFiltro, locacionFiltro);
   //NUEVOOOO
@@ -553,19 +565,20 @@ const PlanDeRodaje = () => {
               {capitulosActivos.has(capitulo.id) && (
                 <div id={`escenas-container-${capitulo.id}`} className="escenas-list-container">
                   <ul>
-                    {escenasFiltradas.filter(escenaObj => escenaObj.escena.capitulo === capitulo.id).map(escenaObj => (
-                      <li
-                        key={escenaObj.escena.id}
-                        className="escena-item"
-                        draggable="true"
-                        onDragStart={(e) => handleDragStart(e, escenaObj)}
-                        data-id={escenaObj.escena.id}
-                      >
-                        <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
-                        <span>{escenaObj.escena.resumen}</span>
-                        <span>{escenaObj.escena.diaNoche}</span>
-                      </li>
-                    ))}
+                    {escenasFiltradas
+                      .filter((escenaObj) => escenaObj.escena.capitulo === capitulo.id)
+                      .map((escenaObj) => (
+                        <li
+                          key={escenaObj.escena.id}  // Clave única agregada
+                          className="escena-item"
+                          draggable="true"
+                          onDragStart={(e) => handleDragStart(e, escenaObj)}
+                          data-id={escenaObj.escena.id}>
+                          <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
+                          <span>{escenaObj.escena.resumen}</span>
+                          <span>{escenaObj.escena.diaNoche}</span>
+                        </li>
+                      ))}
                   </ul>
                 </div>
               )}
@@ -576,26 +589,22 @@ const PlanDeRodaje = () => {
           <button className="crear-plan-btn" onClick={handleCrearPlan}>Crear Nuevo Plan</button>
           {planes.length > 0 ? (
             planes.map((plan) => (
-              <div key={plan.id} className="plan-item">
+              <div key={plan.id} className="plan-item" data-plan-id={plan.id}>
                 <h3>{plan.titulo}</h3>
                 <p>Fecha: {new Date(plan.fecha).toLocaleDateString()}</p>
                 <p>Director: {plan.director}</p>
                 <h4>Escenas:</h4>
-                <div
-                  id={`plan-container-${plan.id}`}
-                  data-plan-id={plan.id}
-                  className="plan-escenas-container"
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => handleDrop(e, plan.id)}
-                >
+                <div id={`plan-container-${plan.id}`} className="plan-escenas-container" onDragOver={(e) => e.preventDefault()} onDrop={handleDrop}>
                   {plan.escenas && plan.escenas.length > 0 ? (
-                    plan.escenas.map((escena) => (
-                      <div key={escena.id} className="escena-item" data-id={escena.id}>
+                    plan.escenas.map((escena, index) => (
+                      <div
+                        key={escena.id || `temp-key-${index}`}
+                        className="escena-item"
+                        data-id={escena.id}>
+
                         {escena.titulo_escena || 'Sin título'}
                         {escena.resumen && <p>{escena.resumen}</p>}
                         {escena.diaNoche && <p>{escena.diaNoche}</p>}
-                        
-
                       </div>
                     ))
                   ) : (
