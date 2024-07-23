@@ -1,29 +1,28 @@
+// PersonajeForm.jsx
 import React, { useState } from 'react';
-import axios from 'axios';
 
 function PersonajeForm({ proyectoId, onSubmit }) {
   const [nombre, setNombre] = useState('');
-  
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     try {
       const token = localStorage.getItem('token');
       const personaje = {
         nombre,
         proyecto: { id: proyectoId },
       };
+
+      console.log('Enviando personaje:', personaje);
+
       await onSubmit(personaje);
       setNombre('');
-  
     } catch (error) {
-      console.error(error);
-      // Manejar el error, mostrar mensaje al usuario
+      console.error('Error al enviar personaje:', error);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div>
       <div>
         <label htmlFor="nombre">Nombre:</label>
         <input
@@ -34,8 +33,8 @@ function PersonajeForm({ proyectoId, onSubmit }) {
           required
         />
       </div>
-      <button type="submit">Crear Personaje</button>
-    </form>
+      <button type="button" onClick={handleSubmit}>Crear Personaje</button>
+    </div>
   );
 }
 

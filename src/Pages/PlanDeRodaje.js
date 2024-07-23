@@ -163,12 +163,12 @@ const PlanDeRodaje = () => {
     }
   };
 
-const agregarEscenasAPlan = (planId, escenaIds) => {
+  const agregarEscenasAPlan = (planId, escenaIds) => {
     setEscenasEnPlanesTemp(prev => ({
-        ...prev,
-        [planId]: [...(prev[planId] || []), ...escenaIds] // Concatenar nuevas escenas
+      ...prev,
+      [planId]: [...(prev[planId] || []), ...escenaIds] // Concatenar nuevas escenas
     }));
-};
+  };
 
   const handleItemSubmit = async (item) => {
     try {
@@ -352,34 +352,34 @@ const agregarEscenasAPlan = (planId, escenaIds) => {
 
   const handleGuardarPlanes = async () => {
     try {
-        const token = localStorage.getItem('token');
-        for (const planId in escenasEnPlanesTemp) {
-            const escenaIds = escenasEnPlanesTemp[planId];
-            const elementos = escenaIds.map((escenaId, index) => ({
-                escena: { id: escenaId },
-                posicion: index + 1
-            }));
+      const token = localStorage.getItem('token');
+      for (const planId in escenasEnPlanesTemp) {
+        const escenaIds = escenasEnPlanesTemp[planId];
+        const elementos = escenaIds.map((escenaId, index) => ({
+          escena: { id: escenaId },
+          posicion: index + 1
+        }));
 
-            await axios.put(
-                `http://localhost:8080/api/planes/${planId}/elementos/`,
-                elementos,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
+        await axios.put(
+          `http://localhost:8080/api/planes/${planId}/elementos/`,
+          elementos,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-            // Actualizar el estado de planes (opcional, si quieres reflejar los cambios en la interfaz)
-            setPlanes(prevPlanes => prevPlanes.map(plan =>
-                plan.id === parseInt(planId) ? { ...plan, escenas: elementos.map(el => el.escena) } : plan
-            ));
-        }
-        setEscenasEnPlanesTemp({});  // Limpiar escenas temporales después de guardar
-        alert('Planes guardados correctamente');
+        // Actualizar el estado de planes (opcional, si quieres reflejar los cambios en la interfaz)
+        setPlanes(prevPlanes => prevPlanes.map(plan =>
+          plan.id === parseInt(planId) ? { ...plan, escenas: elementos.map(el => el.escena) } : plan
+        ));
+      }
+      setEscenasEnPlanesTemp({});  // Limpiar escenas temporales después de guardar
+      alert('Planes guardados correctamente');
     } catch (error) {
-        console.error('Error al guardar los planes:', error);
-        alert('Error al guardar los planes');
+      console.error('Error al guardar los planes:', error);
+      alert('Error al guardar los planes');
     }
-};
+  };
 
 
   const handleFiltroChange = (e) => {
@@ -576,6 +576,7 @@ const agregarEscenasAPlan = (planId, escenaIds) => {
                           data-id={escenaObj.escena.id}>
                           <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
                           <span>{escenaObj.escena.resumen}</span>
+                          
                           <span>{escenaObj.escena.diaNoche}</span>
                         </li>
                       ))}

@@ -6,6 +6,70 @@
   overflow: hidden;
   position: relative;
 }
+.proyecto-actions {
+  display: flex;
+  gap: 10px; /* Añade espacio entre los botones */
+}
+
+.button-container {
+  display: flex;
+  gap: 10px; /* Añade espacio entre los botones de confirmar y cancelar */
+}
+
+.btn-confirm,
+.btn-cancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-create {
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.btn-create.cancelar {
+  background-color: red;
+  color: white;
+}
+
+.btn-create.crear {
+  background-color: green;
+  color: white;
+}
+
+.btn-edit, .btn-delete {
+  padding: 10px 10px;
+  margin: 2px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-edit {
+  background-color: #d4dae0;
+  color: #000000;
+}
+
+.btn-edit:hover {
+  background-color: #dee2ec;
+}
+
+.btn-delete {
+  background-color: #dc3545 !important;
+  color: #ffffff !important;
+}
+
+.btn-delete:hover {
+  background-color: #c82333 !important;
+}
+
 
 
 .proyecto-list {
@@ -265,27 +329,9 @@
   transition: background-color 0.3s ease;
 }
 
-.btn-create:hover {
-  background-color: #218838;
-}
 
-.btn-edit {
-  background-color: #ffc107;
-  color: #000000;
-}
 
-.btn-edit:hover {
-  background-color: #e0a800;
-}
 
-.btn-delete {
-  background-color: #dc3545 !important;
-  color: #ffffff !important;
-}
-
-.btn-delete:hover {
-  background-color: #c82333 !important;
-}
 
 .btn-view {
   background-color: #17a2b8;

@@ -139,7 +139,10 @@ function Dashboard() {
   };
 
   const toggleEscenaForm = () => {
-    setShowEscenaForm((prevState) => !prevState);
+    setShowEscenaForm(prev => !prev);
+    if (showEscenaForm) {
+      setSelectedEscena(null); // Reset the selected scene when cancelling
+    }
   };
 
   const handleProyectoSubmit = async (proyecto) => {
@@ -389,8 +392,8 @@ function Dashboard() {
         capitulo: { id: selectedCapitulo.id },
         personajes: escena.personajes.map(personajeId => ({ id: personajeId })),
         locacion: escena.locacion ? { id: escena.locacion } : null,
-
       };
+  
       if (selectedEscena) {
         const response = await axios.put(`http://localhost:8080/api/escenas/${selectedEscena.id}`, escenaData, {
           headers: { Authorization: `Bearer ${token}` },
@@ -537,7 +540,9 @@ function Dashboard() {
               <li key={proyecto.id} className="proyecto-item" onClick={() => handleVerDetallesProyecto(proyecto)}>
                 <span>{proyecto.titulo}</span>
                 <div className="proyecto-actions">
-                  <button onClick={() => navigateToPlanDeRodaje(proyecto.id)}>Plan de Rodaje</button>
+                <button onClick={() => navigateToPlanDeRodaje(proyecto.id)}>
+                <i className="fas fa-film"></i> Plan de Rodaje
+              </button>
                   {editingProyecto && editingProyecto.id === proyecto.id ? (
                     <>
                       <div className="button-container">
@@ -551,6 +556,7 @@ function Dashboard() {
                     </>
                   ) : (
                     <>
+                    
                       <button className="btn-edit" onClick={() => handleProyectoEdit(proyecto)}>
                         <i className="fas fa-edit"></i> Editar nombre
                       </button>
@@ -725,47 +731,70 @@ function Dashboard() {
 
                           {escenasExpandidas[capitulo.id] && (
                             <div className="escena-container">
-                              <table>
-                                <thead>
-                                  <tr>
-                                    <th>Escena</th>
-                                    <th>Resumen</th>
-                                    <th>Interior/Exterior</th>
-                                    <th>Día/Noche</th>
-                                    <th>Personajes</th>
-                                    <th>Locación</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {selectedCapitulo.escenas &&
-                                    selectedCapitulo.escenas.map((escena) => (
-                                      <tr key={escena.id}>
-                                        <td>{escena.titulo_escena}</td>
-                                        <td>{escena.resumen}</td>
-                                        <td>{escena.interiorExterior || "No especificado"}</td>
-                                        <td>{escena.diaNoche || "No especificado"}</td>
-                                        <td>
-                                          {escena.personajes
-                                            ? escena.personajes.map(p => p.nombre).join(", ")
-                                            : "No especificado"}
-                                        </td>
-                                        <td>{escena.locacion ? escena.locacion.nombre : "No especificado"}</td>
-                                      </tr>
-                                    ))}
-                                </tbody>
-                              </table>
-                              <div className="escena-form-container">
-                                <button className="btn-create" onClick={toggleEscenaForm}>
-                                  {showEscenaForm ? 'Cancelar' : 'Crear Nueva Escena'}
-                                </button>
-                                {showEscenaForm && (
-                                  <EscenaForm
-                                    capituloId={selectedCapitulo.id}
-                                    escena={selectedEscena}
-                                    personajes={personajes}
-                                    locaciones={locaciones}
-                                    onSubmit={handleEscenaSubmit}
-                                  />
+
+{selectedCapitulo.escenas && selectedCapitulo.escenas.length > 0 ? (
+  <table>
+    <thead>
+      <tr>
+        <th>Escena</th>
+        <th>Take</th>
+        <th>Resumen</th>
+        <th>Interior/Exterior</th>
+        <th>Día/Noche</th>
+        <th>Personajes</th>
+        <th>Locación</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {selectedCapitulo.escenas.map((escena) => (
+        <tr key={escena.id}>
+          <td>{escena.titulo_escena}</td>
+          <td>{escena.numeroEscena}</td>
+          <td>{escena.resumen}</td>
+          <td>{escena.interiorExterior || "No especificado"}</td>
+          <td>{escena.diaNoche || "No especificado"}</td>
+          <td>
+            {escena.personajes
+              ? escena.personajes.map(p => p.nombre).join(', ')
+              : "No especificado"}
+          </td>
+          <td>{escena.locacion ? escena.locacion.nombre : "No especificado"}</td>
+          <td>
+            <button className="btn-edit" onClick={() => handleEscenaEdit(escena)}>
+              <i className="fas fa-edit"></i>
+            </button>
+            <button className="btn-delete" onClick={() => handleEscenaDelete(escena.id)}>
+              <i className="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+) : (
+  <p></p>
+)}
+
+<div className="escena-form-container">
+      <button
+        className={`btn-create ${showEscenaForm ? 'cancelar' : 'crear'}`}
+        onClick={toggleEscenaForm}
+      >
+        {showEscenaForm ? 'Cancelar' : 'Crear Nueva Escena'}
+      </button>
+      {showEscenaForm && (
+        <EscenaForm 
+          capituloId={selectedCapitulo.id}
+          escena={selectedEscena}
+          personajes={personajes}
+          locaciones={locaciones}
+          interiorExterior={selectedEscena ? selectedEscena.interiorExterior : 'INTERIOR'}
+          diaNoche={selectedEscena ? selectedEscena.diaNoche : 'DIA'}
+          proyectoId={selectedProyecto.id}
+          onSubmit={handleEscenaSubmit}
+
+        />
                                 )}
                               </div>
                             </div>
