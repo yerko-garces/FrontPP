@@ -48,7 +48,7 @@ const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter, 
 
     const matchesPersonaje = personajeFilter ? personajes.some(personaje => personaje.id === parseInt(personajeFilter)) : true;
 
-    const matchesLocacion = locacionFilter ? locacion === parseInt(locacionFilter) : true;
+    const matchesLocacion = locacionFilter ? locacion.id === parseInt(locacionFilter) : true;
 
 
 
@@ -330,14 +330,6 @@ const PlanDeRodaje = () => {
     }
   };
 
-<<<<<<< HEAD
-  const agregarEscenasAPlan = (planId, escenaIds) => {
-    setEscenasEnPlanesTemp(prev => ({
-      ...prev,
-      [planId]: [...(prev[planId] || []), ...escenaIds] // Concatenar nuevas escenas
-    }));
-  };
-=======
 
 
   const agregarEscenasAPlan = (planId, escenaIds) => {
@@ -353,7 +345,6 @@ const PlanDeRodaje = () => {
   };
 
 
->>>>>>> 5aa039c8581804c0b3cf8585947f8526a1bfb79a
 
   const handleItemSubmit = async (item) => {
 
@@ -748,36 +739,6 @@ const PlanDeRodaje = () => {
   const handleGuardarPlanes = async () => {
 
     try {
-<<<<<<< HEAD
-      const token = localStorage.getItem('token');
-      for (const planId in escenasEnPlanesTemp) {
-        const escenaIds = escenasEnPlanesTemp[planId];
-        const elementos = escenaIds.map((escenaId, index) => ({
-          escena: { id: escenaId },
-          posicion: index + 1
-        }));
-
-        await axios.put(
-          `http://localhost:8080/api/planes/${planId}/elementos/`,
-          elementos,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        // Actualizar el estado de planes (opcional, si quieres reflejar los cambios en la interfaz)
-        setPlanes(prevPlanes => prevPlanes.map(plan =>
-          plan.id === parseInt(planId) ? { ...plan, escenas: elementos.map(el => el.escena) } : plan
-        ));
-      }
-      setEscenasEnPlanesTemp({});  // Limpiar escenas temporales después de guardar
-      alert('Planes guardados correctamente');
-    } catch (error) {
-      console.error('Error al guardar los planes:', error);
-      alert('Error al guardar los planes');
-    }
-  };
-=======
 
       const token = localStorage.getItem('token');
 
@@ -861,7 +822,6 @@ const PlanDeRodaje = () => {
 
 
 
->>>>>>> 5aa039c8581804c0b3cf8585947f8526a1bfb79a
 
 
   const handleFiltroChange = (e) => {
@@ -1251,11 +1211,7 @@ const PlanDeRodaje = () => {
                           <span>{escenaObj.escena.titulo_escena || 'Sin título'}</span>
 
                           <span>{escenaObj.escena.resumen}</span>
-<<<<<<< HEAD
-                          
-=======
 
->>>>>>> 5aa039c8581804c0b3cf8585947f8526a1bfb79a
                           <span>{escenaObj.escena.diaNoche}</span>
 
                         </li>
