@@ -435,20 +435,88 @@ const PlanDeRodaje = () => {
   const handleLocacionFiltroChange = (event) => {
     setLocacionFiltro(event.target.value);
   };
+
   const generarPDF = () => {
     const doc = new jsPDF();
-    // Configurar el título
+    const planesPorFecha = {}; 
+  
+    // Organizar planes por fecha
+    planes.forEach(plan => {
+      const fecha = dayjs(plan.fecha).format('YYYY-MM-DD');
+      if (!planesPorFecha[fecha]) {
+        planesPorFecha[fecha] = [];
+      }
+      planesPorFecha[fecha].push(plan);
+    });
+  
+    // Título del proyecto en la primera página
     doc.setFontSize(18);
-    doc.text('Plan de Rodaje', 105, 20, { align: 'center' });
-    // Agregar información del proyecto
-    doc.setFontSize(12);
-    doc.text(`Nombre del proyecto: ${proyecto.titulo}`, 20, 40);
-    doc.text(`Director: ${proyecto.director || 'No especificado'}`, 20, 50);
-    // Agregar información de los bloques
-    let yPos = 70;
-    // Guardar el PDF
+    doc.text(`Proyecto: ${proyecto.titulo}`, 105, 20, { align: 'center' });
+  
+    let fechaImpresa = false; // Variable para controlar si ya se imprimió la fecha
+  
+    // Iterar sobre las fechas
+    Object.keys(planesPorFecha).forEach((fecha, index) => {
+      // Agregar una nueva página para cada fecha (excepto la primera)
+      if (index > 0) {
+        doc.addPage();
+        fechaImpresa = false; // Reiniciar el control al cambiar de página
+      }
+  
+      // Configurar título de la página con la fecha (excepto la primera)
+      if (index > 0 || fechaImpresa) { // Imprimir solo en las páginas siguientes o si ya se imprimió en la primera
+        doc.setFontSize(16);
+        doc.text(`Fecha: ${fecha}`, 105, 20, { align: 'center' });
+      } else {
+        // Imprimir la fecha del primer plan debajo del título del proyecto
+        doc.setFontSize(14);
+        doc.text(`Fecha: ${fecha}`, 105, 30, { align: 'center' });
+        fechaImpresa = true; 
+      }
+  
+      // Iterar sobre los planes de esa fecha
+      planesPorFecha[fecha].forEach((plan, planIndex) => {
+        // Calcular la posición vertical correcta para cada plan
+        let yPos = 40; // Empezar en 40 para la primera página
+        if (index === 0) { // Si es la primera página
+          yPos += planIndex * 80 + 10; // 80 puntos por plan + 10 por la fecha
+        } else {
+          yPos += planIndex * 60; // 60 puntos por cada plan en las demás páginas
+        }
+  
+        // Información del plan
+        doc.setFontSize(14);
+        doc.text(`Plan: ${plan.titulo}`, 20, yPos);
+        doc.text(`Director: ${plan.director || 'No especificado'}`, 20, yPos + 10);
+  
+        // Escenas del plan (si las hay)
+        if (plan.planEscenaEtiquetas && plan.planEscenaEtiquetas.length > 0) {
+          doc.setFontSize(12);
+          plan.planEscenaEtiquetas.forEach((item, escenaIndex) => {
+            const escena = escenas.find(e => e.escena.id === item.escena.id).escena; // Encontrar la escena completa
+            doc.text(
+              `Escena: ${escena.titulo_escena || 'Sin título'}`,
+              30, 
+              yPos + 20 + escenaIndex * 15 // Más espacio para la información adicional
+            );
+            // Información adicional de la escena (ajusta según tus necesidades)
+            doc.setFontSize(10);
+            doc.text(`  Resumen: ${escena.resumen || 'No especificado'}`, 35, yPos + 25 + escenaIndex * 15);
+            doc.text(`  Día/Noche: ${escena.diaNoche || 'No especificado'}`, 35, yPos + 30 + escenaIndex * 15);
+            // ... (agregar más campos según tus necesidades)
+          });
+        } else {
+          doc.text('No hay escenas asignadas a este plan.', 30, yPos + 20);
+        }
+      });
+    });
+  
     doc.save('plan_de_rodaje.pdf');
   };
+  
+
+
+
   const handleDragStart = (e, escena) => {
     const escenaData = JSON.stringify({
       escena: {
