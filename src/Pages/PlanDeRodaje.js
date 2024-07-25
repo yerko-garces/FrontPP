@@ -21,7 +21,7 @@ const filterItems = (items, searchText, diaNocheFilter, interiorExteriorFilter, 
     const matchesInteriorExterior = interiorExteriorFilter ? interiorExterior === interiorExteriorFilter : true;
     // Verificar si el personaje filtrado está presente en el array de personajes de la escena
     const matchesPersonaje = personajeFilter ? personajes.some(personaje => personaje.id === parseInt(personajeFilter)) : true;
-    const matchesLocacion = locacionFilter ? locacion === parseInt(locacionFilter) : true;
+    const matchesLocacion = locacionFilter ? locacion.id === parseInt(locacionFilter) : true;
     return matchesSearchText && matchesDiaNoche && matchesInteriorExterior && matchesPersonaje && matchesLocacion;
   });
 };
