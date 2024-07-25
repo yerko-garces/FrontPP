@@ -533,51 +533,54 @@ function Dashboard() {
   return (
     <div className="dashboard-container">
       {!showProyectoDetails && !showPlanDeRodaje && (
-        <div className="proyecto-list">
-          <h1 style={{ textAlign: 'center' }}>Mis Proyectos</h1>
-          <ul>
-            {proyectos.map((proyecto) => (
-              <li key={proyecto.id} className="proyecto-item" onClick={() => handleVerDetallesProyecto(proyecto)}>
-                <span>{proyecto.titulo}</span>
-                <div className="proyecto-actions">
-                <button onClick={() => navigateToPlanDeRodaje(proyecto.id)}>
-                <i className="fas fa-film"></i> Plan de Rodaje
-              </button>
-                  {editingProyecto && editingProyecto.id === proyecto.id ? (
-                    <>
-                      <div className="button-container">
-                        <button className="btn-confirm" onClick={() => handleProyectoEditConfirm(editingProyecto)}>
-                          <i className="fas fa-check"></i> Confirmar
-                        </button>
-                        <button className="btn-cancel" onClick={handleProyectoEditCancel}>
-                          <i className="fas fa-times"></i> Cancelar
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                    
-                      <button className="btn-edit" onClick={() => handleProyectoEdit(proyecto)}>
-                        <i className="fas fa-edit"></i> Editar nombre
-                      </button>
-                      <button className="btn-delete" onClick={() => handleProyectoDelete(proyecto.id)}>
-                        <i className="fas fa-trash"></i> Eliminar
-                      </button>
-                    </>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-          <button className="btn-create" onClick={() => setShowProyectoForm(true)}>Crear Nuevo Proyecto</button>
-          {showProyectoForm && (
-            <ProyectoForm
-              usuarioId={usuarioId}
-              proyecto={selectedProyecto}
-              onSubmit={handleProyectoSubmit}
-            />
-          )}
-        </div>
+         <div className="proyecto-list">
+         <h1 style={{ textAlign: 'center' }}>Mis Proyectos</h1>
+         <ul>
+           {proyectos.map((proyecto) => (
+             <li key={proyecto.id} className="proyecto-item">
+               <div className="proyecto-info" onClick={() => handleVerDetallesProyecto(proyecto)}>
+                 <span>{proyecto.titulo}</span>
+               </div>
+ 
+               <div className="proyecto-actions">
+                 <button onClick={() => navigateToPlanDeRodaje(proyecto.id)}>
+                   <i className="fas fa-film"></i> Plan de Rodaje
+                 </button>
+                 {editingProyecto && editingProyecto.id === proyecto.id ? (
+                   <>
+                     <div className="button-container">
+                       <button className="btn-confirm" onClick={() => handleProyectoEditConfirm(editingProyecto)}>
+                         <i className="fas fa-check"></i> Confirmar
+                       </button>
+                       <button className="btn-cancel" onClick={handleProyectoEditCancel}>
+                         <i className="fas fa-times"></i> Cancelar
+                       </button>
+                     </div>
+                   </>
+                 ) : (
+                   <>
+                     <button className="btn-edit" onClick={() => handleProyectoEdit(proyecto)}>
+                       <i className="fas fa-edit"></i> Editar nombre
+                     </button>
+                     <button className="btn-delete" onClick={() => handleProyectoDelete(proyecto.id, proyecto.titulo)}>
+                       <i className="fas fa-trash"></i> Eliminar
+                     </button>
+                   </>
+                 )}
+               </div>
+             </li>
+           ))}
+         </ul>
+ 
+         <button className="btn-create" onClick={() => setShowProyectoForm(true)}>Crear Nuevo Proyecto</button>
+         {showProyectoForm && (
+           <ProyectoForm
+             usuarioId={usuarioId}
+             proyecto={selectedProyecto}
+             onSubmit={handleProyectoSubmit}
+           />
+         )}
+       </div>
       )}
       <div className={`inventario-container ${showInventario ? 'visible' : ''}`}>
         <button className="inventario-toggle" onClick={() => setShowInventario(!showInventario)}>

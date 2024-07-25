@@ -531,3 +531,15 @@
   right: 15px;
   margin-right: 20px; /* Espacio a la derecha */
 }
+
+.proyecto-item {
+  display: flex; /* Usamos flexbox para alinear los elementos */
+  justify-content: space-between; /* Distribuimos el espacio entre los elementos */
+  align-items: center; /* Alineamos verticalmente al centro */
+}
+
+.proyecto-info {
+  flex: 1; /* Ocupa el espacio disponible a la izquierda */
+  cursor: pointer; /* Indicamos que es clickeable */
+  padding-right: 20px; /* Espacio entre el nombre y los botones */
+}
