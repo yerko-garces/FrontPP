@@ -98,36 +98,34 @@ function Dashboard() {
     const fetchPersonajesAndLocaciones = async () => {
       try {
         const token = localStorage.getItem('token');
-        const personajesResponse = await axios.get(`http://localhost:8080/api/personajes/proyecto/${selectedProyecto.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setPersonajes(personajesResponse.data);
-
-        const locacionesResponse = await axios.get(`http://localhost:8080/api/locaciones/proyecto/${selectedProyecto.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setLocaciones(locacionesResponse.data);
+        if (selectedProyecto) {
+          const personajesResponse = await axios.get(`http://localhost:8080/api/personajes/proyecto/${selectedProyecto.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setPersonajes(personajesResponse.data);
+  
+          const locacionesResponse = await axios.get(`http://localhost:8080/api/locaciones/proyecto/${selectedProyecto.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setLocaciones(locacionesResponse.data);
+        } else {
+          setPersonajes([]);
+          setLocaciones([]);
+        }
       } catch (error) {
         console.error(error);
       }
     };
-
-    if (selectedProyecto) {
-      fetchPersonajesAndLocaciones();
-      setSelectedCapitulo(null);
-      setSelectedEscena(null);
-    } else {
-      setPersonajes([]);
-      setLocaciones([]);
-    }
+  
+    fetchPersonajesAndLocaciones();
   }, [selectedProyecto]);
 
   const toggleShowProyectoDetalle = () => {
     setShowProyectoDetalle(!showProyectoDetalle);
   };
-
   const toggleCapituloForm = () => {
-    setShowCapituloForm((prevState) => !prevState);
+    setShowCapituloForm((prevShowCapituloForm) => !prevShowCapituloForm);
+    setSelectedCapitulo(null); // Desactivar cualquier selección anterior para un nuevo capítulo
   };
 
   const toggleCapitulos = () => {
@@ -213,26 +211,28 @@ function Dashboard() {
     try {
       const token = localStorage.getItem('token');
       if (selectedCapitulo) {
+        // Editando un capítulo existente
         const response = await axios.put(`http://localhost:8080/api/capitulos/${selectedCapitulo.id}`, capitulo, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setSelectedProyecto((prevProyecto) => ({
           ...prevProyecto,
-          capitulos: prevProyecto.capitulos ? prevProyecto.capitulos.map((c) =>
+          capitulos: prevProyecto.capitulos.map((c) =>
             c.id === selectedCapitulo.id ? response.data : c
-          ) : [], // Provide default empty array if null or undefined
+          ),
         }));
       } else {
+        // Creando un nuevo capítulo
         const response = await axios.post(`http://localhost:8080/api/capitulos/${selectedProyecto.id}`, capitulo, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setSelectedProyecto((prevProyecto) => ({
           ...prevProyecto,
-          capitulos: prevProyecto.capitulos ? [...prevProyecto.capitulos, response.data] : [response.data], // Provide default empty array if null or undefined
+          capitulos: [...prevProyecto.capitulos, response.data],
         }));
       }
-      setShowCapituloForm(false);
-      setSelectedCapitulo(null);
+      setShowCapituloForm(false); // Cerrar el formulario después de la operación
+      setSelectedCapitulo(null); // Asegurarse de que selectedCapitulo esté en null
     } catch (error) {
       console.error(error);
     }
@@ -503,12 +503,12 @@ function Dashboard() {
   };
 
   const handleCapituloClick = (capitulo) => {
-    setSelectedCapitulo(capitulo);
+    setSelectedCapitulo(capitulo); // Selecciona el capítulo
     setEscenasExpandidas((prevState) => ({
       ...prevState,
-      [capitulo.id]: !prevState[capitulo.id],
+      [capitulo.id]: !prevState[capitulo.id], // Alternar visibilidad de escenas
     }));
-    fetchEscenas(capitulo.id);
+    fetchEscenas(capitulo.id); // Recuperar escenas para el capítulo seleccionado
   };
 
   const toggleShowLocaciones = () => {
@@ -750,33 +750,46 @@ function Dashboard() {
       </tr>
     </thead>
     <tbody>
-      {selectedCapitulo.escenas.map((escena) => (
-        <tr key={escena.id}>
-          <td>{escena.titulo_escena}</td>
-          <td>{escena.numeroEscena}</td>
-          <td>{escena.resumen}</td>
-          <td>{escena.interiorExterior || "No especificado"}</td>
-          <td>{escena.diaNoche || "No especificado"}</td>
-          <td>
-            {escena.personajes
-              ? escena.personajes.map(p => p.nombre).join(', ')
-              : "No especificado"}
-          </td>
-          <td>{escena.locacion ? escena.locacion.nombre : "No especificado"}</td>
-          <td>
-            <button className="btn-edit" onClick={() => handleEscenaEdit(escena)}>
-              <i className="fas fa-edit"></i>
-            </button>
-            <button className="btn-delete" onClick={() => handleEscenaDelete(escena.id)}>
-              <i className="fas fa-trash"></i>
-            </button>
-          </td>
-        </tr>
-      ))}
+      {selectedCapitulo.escenas.map((escena) => {
+        const locacion = typeof escena.locacion === 'object' ? escena.locacion : locaciones[escena.locacion];
+
+        console.log(`Escena ID: ${escena.id}`);
+        console.log(`Título: ${escena.titulo_escena}`);
+        console.log(`Locación:`, locacion);
+
+        return (
+          <tr key={escena.id}>
+            <td>{escena.titulo_escena}</td>
+            <td>{escena.numeroEscena}</td>
+            <td>{escena.resumen}</td>
+            <td>{escena.interiorExterior || "No especificado"}</td>
+            <td>{escena.diaNoche || "No especificado"}</td>
+            <td>
+              {escena.personajes
+                ? escena.personajes.map(p => p.nombre).join(', ')
+                : "No especificado"}
+            </td>
+            <td>
+              {locacion && locacion.nombre
+                ? locacion.nombre
+                : "No especificado"}
+            </td>
+            <td>
+              <button className="btn-edit" onClick={() => handleEscenaEdit(escena)}>
+                <i className="fas fa-edit"></i>
+              </button>
+              <button className="btn-delete" onClick={() => handleEscenaDelete(escena.id)}>
+                <i className="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        );
+      })}
     </tbody>
   </table>
 ) : (
   <p></p>
+  
 )}
 
 <div className="escena-form-container">
@@ -808,11 +821,11 @@ function Dashboard() {
                   ))}
               </ul>
             )}
-            <button className="btn-create" onClick={toggleCapituloForm}>
-              {showCapituloForm ? 'Cancelar' : 'Crear Nuevo Capítulo'}
-            </button>
-            {showCapituloForm && (
-              <CapituloForm proyectoId={selectedProyecto.id} capitulo={selectedCapitulo} onSubmit={handleCapituloSubmit} />
+<button className="btn-create" onClick={toggleCapituloForm}>
+  {showCapituloForm ? 'Cancelar' : 'Crear Nuevo Capítulo'}
+</button>
+{showCapituloForm && (
+  <CapituloForm proyectoId={selectedProyecto.id} capitulo={null} onSubmit={handleCapituloSubmit}  />
             )}
           </div>
           <div className="personaje-list">
