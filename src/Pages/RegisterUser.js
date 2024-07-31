@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import '../Assets/Register.css'; // Asegúrate de que la ruta sea correcta
+import '../Assets/Login.css'; // Asegúrate de que la ruta sea correcta
 
 function RegisterUser() {
   const [nombre, setNombre] = useState('');
@@ -44,7 +44,7 @@ function RegisterUser() {
       const timer = setTimeout(() => {
         navigate('/');
       }, 1000);
-     
+
       return () => clearTimeout(timer);
     }
   }, [showSuccessMessage, navigate]);
@@ -54,48 +54,50 @@ function RegisterUser() {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-form">
-        <h2>Registro de Usuario</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Nombre de Usuario:</label>
-            <input
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Contraseña:</label>
-            <input
-              type="password"
-              value={contrasena}
-              onChange={(e) => setContrasena(e.target.value)}
-            />
-          </div>
-          <button type="submit" className="register-button">
-            Registrarse
+    <div className="login-page">
+      <div className="login-container">
+        <div className="login-form">
+          <h2>Registro de Usuario</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Nombre de Usuario:</label>
+              <input
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label>Contraseña:</label>
+              <input
+                type="password"
+                value={contrasena}
+                onChange={(e) => setContrasena(e.target.value)}
+              />
+            </div>
+            <button type="submit" className="register-button">
+              Registrarse
+            </button>
+          </form>
+          {popupMessage && (
+            <div className="popup">
+              <div className="popup-inner">
+                <h3>{popupMessage}</h3>
+                <button onClick={handleClosePopup}>Cerrar</button>
+              </div>
+            </div>
+          )}
+          {showSuccessMessage && (
+            <div className="popup">
+              <div className="popup-inner">
+                <h3>Registro exitoso</h3>
+              </div>
+            </div>
+          )}
+          <button onClick={handleGoToHome} className="return-home-button">
+            Volver a inicio
           </button>
-        </form>
-        {popupMessage && (
-          <div className="popup">
-            <div className="popup-inner">
-              <h3>{popupMessage}</h3>
-              <button onClick={handleClosePopup}>Cerrar</button>
-            </div>
-          </div>
-        )}
-        {showSuccessMessage && (
-          <div className="popup">
-            <div className="popup-inner">
-              <h3>Registro exitoso</h3>
-            </div>
-          </div>
-        )}
-        <button onClick={handleGoToHome} className="return-home-button">
-          Volver a inicio
-        </button>
+        </div>
       </div>
     </div>
   );

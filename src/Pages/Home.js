@@ -25,7 +25,7 @@ function Login() {
 
       const token = response.data;
       localStorage.setItem('token', token);
-      
+
       navigate('/dashboard');
     } catch (error) {
       console.error(error);
@@ -34,37 +34,39 @@ function Login() {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-form">
-        <h2>Partner Prod</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Nombre de Usuario:</label>
-            <input
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Contraseña:</label>
-            <input
-              type="password"
-              value={contrasena}
-              onChange={(e) => setContrasena(e.target.value)}
-            />
-          </div>
-          <button type="submit">Iniciar Sesión</button>
-        </form>
-        <button className="register-button" onClick={() => navigate('/register')}>Registrarse</button>
-        {errorMessage && (
-          <div className="popup">
-            <div className="popup-inner">
-              <h3>{errorMessage}</h3>
-              <button onClick={() => setErrorMessage('')}>Cerrar</button>
+    <div className="login-page"> {/* Clase contenedora */}
+      <div className="login-container">
+        <div className="login-form">
+          <h2>Partner Prod</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Nombre de Usuario:</label>
+              <input
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+              />
             </div>
-          </div>
-        )}
+            <div className="form-group">
+              <label>Contraseña:</label>
+              <input
+                type="password"
+                value={contrasena}
+                onChange={(e) => setContrasena(e.target.value)}
+              />
+            </div>
+            <button className="login-button" type="submit">Iniciar Sesión</button>
+          </form>
+          <button className="register-button" onClick={() => navigate('/register')}>Registrarse</button>
+          {errorMessage && (
+            <div className="popup">
+              <div className="popup-inner">
+                <h3>{errorMessage}</h3>
+                <button onClick={() => setErrorMessage('')}>Cerrar</button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
