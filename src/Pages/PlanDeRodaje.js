@@ -571,17 +571,23 @@ const PlanDeRodaje = () => {
                 {plan.planEscenaEtiquetas && plan.planEscenaEtiquetas.length > 0 ? (
                   plan.planEscenaEtiquetas
                     .sort((a, b) => a.posicion - b.posicion)
-                    .map((item) => (
-                      <div
-                        key={`${item.escena.id}-${item.posicion}`}
-                        className={`escena-item ${escenasEnPlanesTemp[plan.id]?.includes(item.escena.id) ? 'new-escena' : ''}`}
-                        data-id={item.escena.id}
-                      >
-                        {item.escena.titulo_escena || 'Sin título'}
-                        {item.escena.resumen && <p>{item.escena.resumen}</p>}
-                        {item.escena.diaNoche && <p>{item.escena.diaNoche}</p>}
-                      </div>
-                    ))
+                    .map((item) => {
+                      // Comprobación de null/undefined
+                      if (!item || !item.escena) {
+                        return null; // o puedes renderizar un placeholder
+                      }
+                      return (
+                        <div
+                          key={`${item.escena.id}-${item.posicion}`}
+                          className={`escena-item ${escenasEnPlanesTemp[plan.id]?.includes(item.escena.id) ? 'new-escena' : ''}`}
+                          data-id={item.escena.id}
+                        >
+                          {item.escena.titulo_escena || 'Sin título'}
+                          {item.escena.resumen && <p>{item.escena.resumen}</p>}
+                          {item.escena.diaNoche && <p>{item.escena.diaNoche}</p>}
+                        </div>
+                      );
+                    })
                 ) : (
                   <p>No hay escenas asignadas a este plan.</p>
                 )}
