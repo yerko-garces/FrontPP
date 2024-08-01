@@ -9,6 +9,8 @@ import { useLocation } from 'react-router-dom';
 import FiltrosEscenas from './FiltrosEscenas';
 import AgregarItemsComponent from './AgregarItemsComponent';
 import DevolverItemsComponent from './DevolverItemsComponent';
+import Inventario from './Inventario';
+
 
 const Escena = ({ escena, index, moveEscena }) => {
   const [{ isDragging }, dragRef] = useDrag({
@@ -607,6 +609,8 @@ const PlanDeRodaje = () => {
                   />
                   <DevolverItemsComponent planId={plan.id} onItemsUpdated={fetchData} /> {/* Cambiado de fetchPlanes a fetchData */}
                 </div>
+
+
               )}
               <button onClick={() => toggleGestionarItems(plan.id)}>
                 {selectedPlanId === plan.id ? 'Cerrar Gestión' : 'Gestionar Items'}
@@ -651,6 +655,8 @@ const PlanDeRodaje = () => {
           )}
         </div>
       </div>
+
+
       {planSeleccionado && (
         <div ref={dropRef} style={{ width: '90%', minHeight: '300px', border: '1px solid #ccc', padding: '10px', marginTop: '20px', borderRadius: '10px' }}>
           <h2>Elementos Seleccionados para {planSeleccionado.titulo}</h2>
@@ -669,7 +675,12 @@ const PlanDeRodaje = () => {
           <button onClick={handleAsociarElementos} style={estiloBoton('green')}>Asociar Elementos al Plan</button>
         </div>
       )}
+
+
+      <Inventario />
     </div>
+
+
   );
 
 };
