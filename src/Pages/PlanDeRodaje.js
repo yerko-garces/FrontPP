@@ -109,6 +109,9 @@ const estiloBoton = (color) => ({
   transition: 'all 0.3s ease',
 });
 
+
+
+
 const PlanDeRodaje = () => {
   const [nombreProyecto, setNombreProyecto] = useState('');
   const [todasLasEscenas, setTodasLasEscenas] = useState([]);
@@ -541,49 +544,46 @@ const PlanDeRodaje = () => {
     }
   };
 
+  const togglePlanDetails = (planId) => {
+    setPlanSeleccionado(prev => prev && prev.id === planId ? null : planes.find(p => p.id === planId));
+  };
+
   if (loading) {
     return <div>Cargando...</div>;
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <h2>{nombreProyecto}</h2>
       <FiltrosEscenas onFiltroChange={handleFiltroChange} filtros={filtros} />
-      <div style={{ display: 'flex', justifyContent: 'space-around', width: '100%' }}>
-        <div style={{ width: '45%', minHeight: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '10px' }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Columna izquierda para escenas disponibles */}
+        <div style={{ width: '50%', overflowY: 'auto', padding: '10px', borderRight: '1px solid #ccc' }}>
           <h2>Escenas Disponibles</h2>
-          {escenasDisponibles.map((escena, index) => (
-            <Escena key={escena.id} escena={escena} index={index} />
-          ))}
+          <div ref={dropRef} style={{ minHeight: '200px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px' }}>
+            {escenasDisponibles.map((escena, index) => (
+              <Escena key={escena.id} escena={escena} index={index} />
+            ))}
+          </div>
         </div>
-        <div style={{ width: '45%', minHeight: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '10px' }}>
+  
+        {/* Columna derecha para planes y elementos seleccionados */}
+        <div style={{ width: '50%', display: 'flex', flexDirection: 'column', overflowY: 'auto', padding: '10px' }}>
           <h2>Planes</h2>
           {planes.map((plan) => (
-            <div key={plan.id} className="plan-item" data-plan-id={plan.id}>
+            <div key={plan.id} className="plan-item" style={{ marginBottom: '20px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
               <h3>{plan.titulo}</h3>
               <p>Fecha: {new Date(plan.fecha).toLocaleDateString()}</p>
               <p>Director: {plan.director}</p>
               <h4>Escenas:</h4>
-              <div
-                id={`plan-container-${plan.id}`}
-                className="plan-escenas-container"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => handleDrop(e, plan.id)}
-              >
+              <div id={`plan-container-${plan.id}`} className="plan-escenas-container">
                 {plan.planEscenaEtiquetas && plan.planEscenaEtiquetas.length > 0 ? (
                   plan.planEscenaEtiquetas
                     .sort((a, b) => a.posicion - b.posicion)
                     .map((item) => {
-                      // Comprobación de null/undefined
-                      if (!item || !item.escena) {
-                        return null; // o puedes renderizar un placeholder
-                      }
+                      if (!item || !item.escena) return null;
                       return (
-                        <div
-                          key={`${item.escena.id}-${item.posicion}`}
-                          className={`escena-item ${escenasEnPlanesTemp[plan.id]?.includes(item.escena.id) ? 'new-escena' : ''}`}
-                          data-id={item.escena.id}
-                        >
+                        <div key={`${item.escena.id}-${item.posicion}`} className="escena-item">
                           {item.escena.titulo_escena || 'Sin título'}
                           {item.escena.resumen && <p>{item.escena.resumen}</p>}
                           {item.escena.diaNoche && <p>{item.escena.diaNoche}</p>}
@@ -604,19 +604,39 @@ const PlanDeRodaje = () => {
                           p.id === plan.id ? { ...p, planItems: items } : p
                         ));
                       });
-                      fetchData(); // Cambiado de fetchInventarioItems a fetchData
+                      fetchData();
                     }}
                   />
-                  <DevolverItemsComponent planId={plan.id} onItemsUpdated={fetchData} /> {/* Cambiado de fetchPlanes a fetchData */}
+                  <DevolverItemsComponent planId={plan.id} onItemsUpdated={fetchData} />
                 </div>
-
-
               )}
               <button onClick={() => toggleGestionarItems(plan.id)}>
                 {selectedPlanId === plan.id ? 'Cerrar Gestión' : 'Gestionar Items'}
               </button>
-              <button onClick={() => handleBorrarPlan(plan.id)} style={estiloBoton('red')}>Eliminar Plan</button> {/* Cambiado de handleEliminarPlan a handleBorrarPlan */}
+              <button onClick={() => handleBorrarPlan(plan.id)} style={estiloBoton('red')}>Eliminar Plan</button>
               <button onClick={() => handleSeleccionarPlan(plan)} style={estiloBoton('blue')}>Seleccionar</button>
+  
+              {/* Elementos seleccionados para el plan */}
+              {planSeleccionado && planSeleccionado.id === plan.id && (
+                <div style={{ marginTop: '20px' }}>
+                  <h3>Elementos Seleccionados para {planSeleccionado.titulo}</h3>
+                  <div style={{ minHeight: '200px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px' }}>
+                    {elementosSeleccionados.map((elemento, index) => (
+                      <ElementoSeleccionado
+                        key={elemento.id}
+                        elemento={elemento}
+                        index={index}
+                        moveElemento={moveElemento}
+                        removeElemento={removeElemento}
+                        updateHora={updateHora}
+                        updateEtiqueta={updateEtiqueta}
+                      />
+                    ))}
+                    <button onClick={agregarEtiqueta} style={estiloBoton('blue')}>Agregar Etiqueta</button>
+                    <button onClick={handleAsociarElementos} style={estiloBoton('green')}>Asociar Elementos al Plan</button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
           <button onClick={() => generarPDF(proyectoRef.current, planes)} style={estiloBoton('blue')}>Descargar PDF</button>
@@ -630,7 +650,6 @@ const PlanDeRodaje = () => {
                 onChange={handlePlanInputChange}
                 placeholder="Título del plan"
                 required
-                style={{ marginBottom: '10px', padding: '5px' }}
               />
               <input
                 type="date"
@@ -638,7 +657,6 @@ const PlanDeRodaje = () => {
                 value={newPlan.fecha}
                 onChange={handlePlanInputChange}
                 required
-                style={{ marginBottom: '10px', padding: '5px' }}
               />
               <input
                 type="text"
@@ -647,42 +665,16 @@ const PlanDeRodaje = () => {
                 onChange={handlePlanInputChange}
                 placeholder="Director"
                 required
-                style={{ marginBottom: '10px', padding: '5px' }}
               />
-              <button type="submit" style={estiloBoton('green')}>Crear Plan</button>
-              <button type="button" onClick={() => setShowPlanForm(false)} style={estiloBoton('gray')}>Cancelar</button>
+              <button type="submit">Crear Plan</button>
+              <button type="button" onClick={() => setShowPlanForm(false)}>Cancelar</button>
             </form>
           )}
         </div>
       </div>
-
-
-      {planSeleccionado && (
-        <div ref={dropRef} style={{ width: '90%', minHeight: '300px', border: '1px solid #ccc', padding: '10px', marginTop: '20px', borderRadius: '10px' }}>
-          <h2>Elementos Seleccionados para {planSeleccionado.titulo}</h2>
-          {elementosSeleccionados.map((elemento, index) => (
-            <ElementoSeleccionado
-              key={elemento.id}
-              elemento={elemento}
-              index={index}
-              moveElemento={moveElemento}
-              removeElemento={removeElemento}
-              updateHora={updateHora}
-              updateEtiqueta={updateEtiqueta}
-            />
-          ))}
-          <button onClick={agregarEtiqueta} style={estiloBoton('blue')}>Agregar Etiqueta</button>
-          <button onClick={handleAsociarElementos} style={estiloBoton('green')}>Asociar Elementos al Plan</button>
-        </div>
-      )}
-
-
       <Inventario />
     </div>
-
-
   );
-
 };
 
 const PlanDeRodajeWrapper = () => {
@@ -694,5 +686,3 @@ const PlanDeRodajeWrapper = () => {
 };
 
 export default PlanDeRodajeWrapper;
-
-
