@@ -7,6 +7,8 @@ import dayjs from 'dayjs';
 import jsPDF from 'jspdf';
 import { useLocation } from 'react-router-dom';
 import FiltrosEscenas from './FiltrosEscenas';
+import AgregarItemsComponent from './AgregarItemsComponent';
+import DevolverItemsComponent from './DevolverItemsComponent';
 
 const Escena = ({ escena, index, moveEscena }) => {
   const [{ isDragging }, dragRef] = useDrag({
@@ -116,6 +118,9 @@ const PlanDeRodaje = () => {
   const proyectoRef = useRef(null);
   const [planes, setPlanes] = useState([]);
   const [planSeleccionado, setPlanSeleccionado] = useState(null);
+  const [selectedPlanId, setSelectedPlanId] = useState(null);
+  const [escenasEnPlanesTemp, setEscenasEnPlanesTemp] = useState({});
+  const [inventarioItems, setInventarioItems] = useState([]);
 
   const [filtros, setFiltros] = useState({
     filtro: '',
@@ -129,6 +134,44 @@ const PlanDeRodaje = () => {
 
   const location = useLocation();
   const { proyectoId } = location.state || {};
+
+  const toggleGestionarItems = (planId) => {
+    setSelectedPlanId(prevId => prevId === planId ? null : planId);
+  };
+
+  const fetchPlanItems = async (planId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`http://localhost:8080/api/planes/${planId}/items`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching plan items:', error);
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    fetchInventarioItems();
+  }, []);
+
+  const fetchInventarioItems = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const userResponse = await axios.get('http://localhost:8080/api/proyectos/usuario-id', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const usuarioId = userResponse.data;
+      const inventarioResponse = await axios.get(`http://localhost:8080/api/items/bodega/${usuarioId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setInventarioItems(inventarioResponse.data || []);
+    } catch (error) {
+      console.error('Error fetching inventario items:', error);
+      setInventarioItems([]);
+    }
+  };
 
   const fetchData = useCallback(async (proyecto) => {
     if (!proyectoId) {
@@ -503,7 +546,8 @@ const PlanDeRodaje = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h2>{nombreProyecto}</h2>
-      <FiltrosEscenas onFiltroChange={handleFiltroChange} filtros={filtros} /><div style={{ display: 'flex', justifyContent: 'space-around', width: '100%' }}>
+      <FiltrosEscenas onFiltroChange={handleFiltroChange} filtros={filtros} />
+      <div style={{ display: 'flex', justifyContent: 'space-around', width: '100%' }}>
         <div style={{ width: '45%', minHeight: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '10px' }}>
           <h2>Escenas Disponibles</h2>
           {escenasDisponibles.map((escena, index) => (
@@ -513,12 +557,56 @@ const PlanDeRodaje = () => {
         <div style={{ width: '45%', minHeight: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '10px' }}>
           <h2>Planes</h2>
           {planes.map((plan) => (
-            <div key={plan.id} style={{ marginBottom: '20px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
+            <div key={plan.id} className="plan-item" data-plan-id={plan.id}>
               <h3>{plan.titulo}</h3>
               <p>Fecha: {new Date(plan.fecha).toLocaleDateString()}</p>
               <p>Director: {plan.director}</p>
+              <h4>Escenas:</h4>
+              <div
+                id={`plan-container-${plan.id}`}
+                className="plan-escenas-container"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handleDrop(e, plan.id)}
+              >
+                {plan.planEscenaEtiquetas && plan.planEscenaEtiquetas.length > 0 ? (
+                  plan.planEscenaEtiquetas
+                    .sort((a, b) => a.posicion - b.posicion)
+                    .map((item) => (
+                      <div
+                        key={`${item.escena.id}-${item.posicion}`}
+                        className={`escena-item ${escenasEnPlanesTemp[plan.id]?.includes(item.escena.id) ? 'new-escena' : ''}`}
+                        data-id={item.escena.id}
+                      >
+                        {item.escena.titulo_escena || 'Sin título'}
+                        {item.escena.resumen && <p>{item.escena.resumen}</p>}
+                        {item.escena.diaNoche && <p>{item.escena.diaNoche}</p>}
+                      </div>
+                    ))
+                ) : (
+                  <p>No hay escenas asignadas a este plan.</p>
+                )}
+              </div>
+              {selectedPlanId === plan.id && (
+                <div className="gestionar-items-container">
+                  <AgregarItemsComponent
+                    planId={plan.id}
+                    onItemsUpdated={() => {
+                      fetchPlanItems(plan.id).then(items => {
+                        setPlanes(prevPlanes => prevPlanes.map(p =>
+                          p.id === plan.id ? { ...p, planItems: items } : p
+                        ));
+                      });
+                      fetchData(); // Cambiado de fetchInventarioItems a fetchData
+                    }}
+                  />
+                  <DevolverItemsComponent planId={plan.id} onItemsUpdated={fetchData} /> {/* Cambiado de fetchPlanes a fetchData */}
+                </div>
+              )}
+              <button onClick={() => toggleGestionarItems(plan.id)}>
+                {selectedPlanId === plan.id ? 'Cerrar Gestión' : 'Gestionar Items'}
+              </button>
+              <button onClick={() => handleBorrarPlan(plan.id)} style={estiloBoton('red')}>Eliminar Plan</button> {/* Cambiado de handleEliminarPlan a handleBorrarPlan */}
               <button onClick={() => handleSeleccionarPlan(plan)} style={estiloBoton('blue')}>Seleccionar</button>
-              <button onClick={() => handleBorrarPlan(plan.id)} style={estiloBoton('red')}>Borrar</button>
             </div>
           ))}
           <button onClick={() => generarPDF(proyectoRef.current, planes)} style={estiloBoton('blue')}>Descargar PDF</button>
@@ -577,6 +665,7 @@ const PlanDeRodaje = () => {
       )}
     </div>
   );
+
 };
 
 const PlanDeRodajeWrapper = () => {
