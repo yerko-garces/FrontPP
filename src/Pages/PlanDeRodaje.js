@@ -294,14 +294,16 @@ const PlanDeRodaje = () => {
     setElementosSeleccionados(elementosConPosicionActualizada);
   };
 
-  const handleDrop = (item) => {
+  const handleDrop = useCallback((item) => {
     const escena = escenasDisponibles.find((e) => e.id === item.id);
-    setElementosSeleccionados((prevElementos) => [
-      ...prevElementos,
-      { ...escena, tipo: 'escena', hora: '', posicion: prevElementos.length + 1 }
-    ]);
-    setEscenasDisponibles((prevEscenas) => prevEscenas.filter((e) => e.id !== item.id));
-  };
+    if (escena) {
+      setElementosSeleccionados((prevElementos) => [
+        ...prevElementos,
+        { ...escena, tipo: 'escena', hora: '', posicion: prevElementos.length + 1 }
+      ]);
+      setEscenasDisponibles((prevEscenas) => prevEscenas.filter((e) => e.id !== item.id));
+    }
+  }, [escenasDisponibles]);
 
   const [, dropRef] = useDrop({
     accept: 'ESCENA',
@@ -548,6 +550,8 @@ const PlanDeRodaje = () => {
     setPlanSeleccionado(prev => prev && prev.id === planId ? null : planes.find(p => p.id === planId));
   };
 
+  //Arreglao
+
   if (loading) {
     return <div>Cargando...</div>;
   }
@@ -559,8 +563,8 @@ const PlanDeRodaje = () => {
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* Columna izquierda para escenas disponibles */}
         <div style={{ width: '50%', overflowY: 'auto', padding: '10px', borderRight: '1px solid #ccc' }}>
-          <h2>Escenas Disponibles</h2>
-          <div ref={dropRef} style={{ minHeight: '200px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px' }}>
+        <h2>Escenas Disponibles</h2>
+          <div style={{ minHeight: '200px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px' }}>
             {escenasDisponibles.map((escena, index) => (
               <Escena key={escena.id} escena={escena} index={index} />
             ))}
@@ -620,7 +624,7 @@ const PlanDeRodaje = () => {
               {planSeleccionado && planSeleccionado.id === plan.id && (
                 <div style={{ marginTop: '20px' }}>
                   <h3>Elementos Seleccionados para {planSeleccionado.titulo}</h3>
-                  <div style={{ minHeight: '200px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px' }}>
+                  <div ref={dropRef} style={{ minHeight: '200px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px' }}>
                     {elementosSeleccionados.map((elemento, index) => (
                       <ElementoSeleccionado
                         key={elemento.id}
