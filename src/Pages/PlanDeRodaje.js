@@ -187,11 +187,13 @@ const PlanDeRodaje = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const [escenasResponse, planesResponse, personajesResponse, locacionesResponse] = await Promise.all([
+      const [escenasResponse, planesResponse, personajesResponse, locacionesResponse,capitulosResponse] = await Promise.all([
         axios.get(`http://localhost:8080/api/escenas/proyecto/${proyectoId}`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`http://localhost:8080/api/planes/proyecto/${proyectoId}`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`http://localhost:8080/api/personajes/proyecto/${proyectoId}`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`http://localhost:8080/api/locaciones/proyecto/${proyectoId}`, { headers: { Authorization: `Bearer ${token}` } })
+        axios.get(`http://localhost:8080/api/locaciones/proyecto/${proyectoId}`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`http://localhost:8080/api/capitulos/${proyectoId}`, { headers: { Authorization: `Bearer ${token}` } })
+
       ]);
       const proyectoResponse = await axios.get(`http://localhost:8080/api/proyectos/proyecto/${proyectoId}`, { headers: { Authorization: `Bearer ${token}` } });
       setNombreProyecto(proyectoResponse.data.titulo); // Guardar el nombre del proyecto
@@ -206,27 +208,29 @@ const PlanDeRodaje = () => {
         interiorExterior: escenaObj.escena.interiorExterior,
         tipo: 'escena',
         personajes: Array.isArray(escenaObj.escena.personajes) ? escenaObj.escena.personajes.map(personaje => personaje) : [], // Dejar los IDs como números
-        locacion: escenaObj.escena.locacion ? escenaObj.escena.locacion.id: null // ID de locación como número (o null si no existe)
+        locacionNombre: escenaObj.escena.locacion ? escenaObj.escena.locacion.nombre : 'Sin locación' ,// Nombre de locación (o 'Sin locación' si no existe)
+        locacion: escenaObj.escena.locacion.nombre ? escenaObj.escena.locacion.id: null ,// ID de locación como número (o null si no existe)
+        capitulo: escenaObj.escena.capitulo ? escenaObj.escena.capitulo: null // Añadir el ID de capítulo
+
       }));
 
       setTodasLasEscenas(escenasProcesadas);
       setEscenasDisponibles(escenasProcesadas);
       setPlanes(planesResponse.data);
 
-      // Ajustar filtros (convertir IDs a números)
       setFiltros(prevFiltros => ({
         ...prevFiltros,
         personajes: personajesResponse.data,
         locaciones: locacionesResponse.data,
-        personajeFiltro: prevFiltros.personajeFiltro ? parseInt(prevFiltros.personajeFiltro, 10) : '', // Convertir a número
-        locacionFiltro: prevFiltros.locacionFiltro ? parseInt(prevFiltros.locacionFiltro, 10) : ''  // Convertir a número
+        capitulos: capitulosResponse.data, // Añadir capítulos a los filtros
+        personajeFiltro: prevFiltros.personajeFiltro ? parseInt(prevFiltros.personajeFiltro, 10) : '',
+        locacionFiltro: prevFiltros.locacionFiltro ? parseInt(prevFiltros.locacionFiltro, 10) : ''
       }));
 
       setLoading(false);
     } catch (error) {
       console.error('Error al obtener datos:', error);
       setLoading(false);
-      // Manejo de errores (mostrar mensaje al usuario, etc.)
     }
     proyectoRef.current = proyecto;
   }, [proyectoId]);
@@ -276,6 +280,11 @@ const PlanDeRodaje = () => {
         console.log('Valor de escena.locacion:', escena.locacion); // Imprime el valor de escena.locacion
         return escena.locacion == filtros.locacionFiltro; // Comparar directamente con el ID numérico
       });
+    }
+    if (filtros.capituloFiltro) {
+      escenasFiltradas = escenasFiltradas.filter(escena =>
+        escena.capitulo === parseInt(filtros.capituloFiltro, 10)
+      );
     }
 
     setEscenasDisponibles(escenasFiltradas);
