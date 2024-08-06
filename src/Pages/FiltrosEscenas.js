@@ -13,17 +13,16 @@ function FiltrosEscenas({ onFiltroChange, filtros }) {
         if (name === 'diaNocheFiltro') setDiaNocheFiltro(value);
         if (name === 'interiorExteriorFiltro') setInteriorExteriorFiltro(value);
         if (name === 'personajeFiltro') setPersonajeFiltro(value);
-        if (name === 'locacionFiltro') setLocacionFiltro(value);
+        if (name === 'locacionFiltro') {
+            setLocacionFiltro(value);
+            console.log("Locación seleccionada ID:", value); // Agregar console.log aquí
+        }
 
         // Notificar al componente padre sobre los cambios en los filtros
         onFiltroChange({
-            filtro,
-            diaNocheFiltro,
-            interiorExteriorFiltro,
-            personajeFiltro,
-            locacionFiltro
+            ...filtros,
+            [name]: value
         });
-        onFiltroChange({ ...filtros, [name]: value });
     };
 
     return (
@@ -49,7 +48,7 @@ function FiltrosEscenas({ onFiltroChange, filtros }) {
             <select name="personajeFiltro" value={personajeFiltro} onChange={handleFiltroChange}>
                 <option value="">Seleccionar Personaje</option>
                 {filtros.personajes.map(personaje => (
-                    <option key={personaje.id} value={personaje.id}>{personaje.nombre}</option> // Usar personaje.nombre
+                    <option key={personaje.id} value={personaje.id}>{personaje.nombre}</option>
                 ))}
             </select>
             <select name="locacionFiltro" value={locacionFiltro} onChange={handleFiltroChange}>
@@ -63,3 +62,4 @@ function FiltrosEscenas({ onFiltroChange, filtros }) {
 }
 
 export default FiltrosEscenas;
+

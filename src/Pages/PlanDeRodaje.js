@@ -205,8 +205,8 @@ const PlanDeRodaje = () => {
         diaNoche: escenaObj.escena.diaNoche,
         interiorExterior: escenaObj.escena.interiorExterior,
         tipo: 'escena',
-        personajes: Array.isArray(escenaObj.personajes) ? escenaObj.personajes.map(personaje => personaje.id) : [], // Dejar los IDs como números
-        locacion: escenaObj.locacion ? escenaObj.locacion.id : null // ID de locación como número (o null si no existe)
+        personajes: Array.isArray(escenaObj.escena.personajes) ? escenaObj.escena.personajes.map(personaje => personaje) : [], // Dejar los IDs como números
+        locacion: escenaObj.escena.locacion ? escenaObj.escena.locacion.id: null // ID de locación como número (o null si no existe)
       }));
 
       setTodasLasEscenas(escenasProcesadas);
@@ -256,21 +256,26 @@ const PlanDeRodaje = () => {
     }
 
     if (filtros.interiorExteriorFiltro) {
+      console.log('Valor de:', filtros.interiorExteriorFiltro);
       escenasFiltradas = escenasFiltradas.filter(escena =>
         escena.interiorExterior === filtros.interiorExteriorFiltro
       );
     }
 
     if (filtros.personajeFiltro) {
-      escenasFiltradas = escenasFiltradas.filter(escena =>
-        escena.personajes.includes(filtros.personajeFiltro) // Comparar directamente con el ID numérico
-      );
+      console.log('Valor de personajeFiltro:', filtros.personajeFiltro);
+      escenasFiltradas = escenasFiltradas.filter(escena => {
+        console.log('Valor de escena.personajes:', escena.personajes); // Imprime el valor de escena.personajes
+        return escena.personajes.some(personaje => personaje.id == filtros.personajeFiltro); // Verificar si el ID del personaje está en el array de personajes
+      });
     }
 
     if (filtros.locacionFiltro) {
-      escenasFiltradas = escenasFiltradas.filter(escena =>
-        escena.locacion === filtros.locacionFiltro // Comparar directamente con el ID numérico
-      );
+      console.log('Valor de locacionFiltro:', filtros.locacionFiltro);
+      escenasFiltradas = escenasFiltradas.filter(escena => {
+        console.log('Valor de escena.locacion:', escena.locacion); // Imprime el valor de escena.locacion
+        return escena.locacion == filtros.locacionFiltro; // Comparar directamente con el ID numérico
+      });
     }
 
     setEscenasDisponibles(escenasFiltradas);
