@@ -461,22 +461,20 @@ const PlanDeRodaje = () => {
 
 
   const generarPDF = (proyecto, planes) => {
-
     const doc = new jsPDF();
-
+  
     doc.setFontSize(20);
     doc.text("Plan de Rodaje", 105, 20, { align: 'center' });
-
+  
     let paginaActual = 1;
     let offsetY = 30;
-
+  
     planes.forEach((plan, indexPlan) => {
       if (indexPlan > 0) {
         doc.addPage();
         offsetY = 30;
       }
-
-
+  
       doc.setFontSize(14);
       doc.text(`Plan: ${plan.titulo}`, 20, offsetY);
       offsetY += 10;
@@ -484,43 +482,68 @@ const PlanDeRodaje = () => {
       offsetY += 10;
       doc.text(`Director: ${plan.director || "No especificado"}`, 20, offsetY);
       offsetY += 20;
-
+  
       plan.planEscenaEtiquetas.forEach((elementoPlan, indexElemento) => {
-        const elemento = elementoPlan.escena || elementoPlan.etiqueta;
-
-        if (elemento.tipo === 'escena') {
-          doc.text(`Escena ${indexElemento + 1}: ${elemento.content}`, 20, offsetY);
-          if (elemento.resumen) {
-            offsetY += 10;
-            doc.setFontSize(12);
-            doc.text(`Resumen: ${elemento.resumen}`, 30, offsetY);
-          }
-          if (elemento.diaNoche) {
-            offsetY += 10;
-            doc.setFontSize(12);
-            doc.text(`Dia/Noche: ${elemento.diaNoche}`, 30, offsetY);
-          }
-          if (elemento.hora) {
-            offsetY += 10;
-            doc.setFontSize(12);
-            doc.text(`Hora: ${elemento.hora}`, 30, offsetY);
-          }
-        } else if (elemento.tipo === 'etiqueta') {
-          doc.setFontSize(12);
-          doc.text(`Etiqueta ${indexElemento + 1}: ${elemento.descripcion}`, 30, offsetY);
-        }
-
-        offsetY += 20;
         if (offsetY > 260) {
           doc.addPage();
           paginaActual++;
           offsetY = 30;
-          doc.setFontSize(16);
-          doc.text(`Proyecto: ${proyecto.titulo}`, 20, 20);
+        }
+  
+        if (elementoPlan.escena) {
+          const escena = elementoPlan.escena;
+          doc.setFontSize(12);
+          doc.text(`Escena ${indexElemento + 1}: ${escena.titulo_escena || 'Sin título'}`, 20, offsetY);
+          offsetY += 10;
+  
+          if (escena.resumen) {
+            doc.text(`Resumen: ${escena.resumen}`, 30, offsetY);
+            offsetY += 10;
+          }
+          if (escena.diaNoche) {
+            doc.text(`Día/Noche: ${escena.diaNoche}`, 30, offsetY);
+            offsetY += 10;
+          }
+          if (escena.interiorExterior) {
+            doc.text(`Interior/Exterior: ${escena.interiorExterior}`, 30, offsetY);
+            offsetY += 10;
+          }
+          if (escena.personajes && escena.personajes.length > 0) {
+            doc.text(`Personajes: ${escena.personajes.map(p => p.nombre).join(', ')}`, 30, offsetY);
+            offsetY += 10;
+          }
+          if (escena.locacion) {
+            doc.text(`Locación: ${escena.locacion.nombre}`, 30, offsetY);
+            offsetY += 10;
+          }
+          if (escena.capitulo) {
+            doc.text(`Capítulo: ${escena.capitulo.numero}`, 30, offsetY);
+            offsetY += 10;
+          }
+          if (escena.take) {
+            doc.text(`Take: ${escena.take}`, 30, offsetY);
+            offsetY += 10;
+          }
+          if (elementoPlan.hora) {
+            doc.text(`Hora: ${elementoPlan.hora}`, 30, offsetY);
+            offsetY += 10;
+          }
+  
+          offsetY += 10; // Espacio extra entre escenas
+        } else if (elementoPlan.etiqueta) {
+          doc.setFontSize(12);
+          doc.text(`Etiqueta: ${elementoPlan.etiqueta.nombre}`, 30, offsetY);
+          offsetY += 20;
+        }
+  
+        if (offsetY > 260) {
+          doc.addPage();
+          paginaActual++;
+          offsetY = 30;
         }
       });
     });
-
+  
     doc.save('plan_de_rodaje.pdf');
   };
 
