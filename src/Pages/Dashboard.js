@@ -179,13 +179,21 @@ function Dashboard() {
   };
 
   const handleProyectoEdit = (proyecto) => {
-    setEditingProyecto(proyecto);
-    setSelectedProyecto(null);
+    setEditingProyecto({...proyecto, editingTitle: proyecto.titulo});
   };
-
-  const handleProyectoEditConfirm = async (proyecto) => {
-    await handleProyectoSubmit(proyecto);
-    setEditingProyecto(null);
+  
+  const handleProyectoEditConfirm = async (editingProyecto) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.put(`http://localhost:8080/api/proyectos/${editingProyecto.id}`, 
+        { ...editingProyecto, titulo: editingProyecto.editingTitle },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setProyectos(proyectos.map((p) => p.id === editingProyecto.id ? response.data : p));
+      setEditingProyecto(null);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const handleProyectoEditCancel = () => {
@@ -532,45 +540,54 @@ function Dashboard() {
 
   return (
     <div className="dashboard-container">
-      {!showProyectoDetails && !showPlanDeRodaje && (
-         <div className="proyecto-list">
-         <h1 style={{ textAlign: 'center' }}>Mis Proyectos</h1>
-         <ul>
-           {proyectos.map((proyecto) => (
-             <li key={proyecto.id} className="proyecto-item">
-               <div className="proyecto-info" onClick={() => handleVerDetallesProyecto(proyecto)}>
-                 <span>{proyecto.titulo}</span>
-               </div>
- 
-               <div className="proyecto-actions">
-                 <button onClick={() => navigateToPlanDeRodaje(proyecto.id)}>
-                   <i className="fas fa-film"></i> Plan de Rodaje
-                 </button>
-                 {editingProyecto && editingProyecto.id === proyecto.id ? (
-                   <>
-                     <div className="button-container">
-                       <button className="btn-confirm" onClick={() => handleProyectoEditConfirm(editingProyecto)}>
-                         <i className="fas fa-check"></i> Confirmar
-                       </button>
-                       <button className="btn-cancel" onClick={handleProyectoEditCancel}>
-                         <i className="fas fa-times"></i> Cancelar
-                       </button>
-                     </div>
-                   </>
-                 ) : (
-                   <>
-                     <button className="btn-edit" onClick={() => handleProyectoEdit(proyecto)}>
-                       <i className="fas fa-edit"></i> Editar nombre
-                     </button>
-                     <button className="btn-delete" onClick={() => handleProyectoDelete(proyecto.id, proyecto.titulo)}>
-                       <i className="fas fa-trash"></i> Eliminar
-                     </button>
-                   </>
-                 )}
-               </div>
-             </li>
-           ))}
-         </ul>
+    {!showProyectoDetails && !showPlanDeRodaje && (
+      <div className="proyecto-list">
+        <h1 style={{ textAlign: 'center' }}>Mis Proyectos</h1>
+        <ul>
+          {proyectos.map((proyecto) => (
+            <li key={proyecto.id} className="proyecto-item">
+              <div className="proyecto-info" onClick={() => !editingProyecto && handleVerDetallesProyecto(proyecto)}>
+                {editingProyecto && editingProyecto.id === proyecto.id ? (
+                  <input
+                    type="text"
+                    value={editingProyecto.editingTitle}
+                    onChange={(e) => setEditingProyecto({...editingProyecto, editingTitle: e.target.value})}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <span>{proyecto.titulo}</span>
+                )}
+              </div>
+
+              <div className="proyecto-actions">
+                <button onClick={() => navigateToPlanDeRodaje(proyecto.id)}>
+                  <i className="fas fa-film"></i> Plan de Rodaje
+                </button>
+                {editingProyecto && editingProyecto.id === proyecto.id ? (
+                  <>
+                    <div className="button-container">
+                      <button className="btn-confirm" onClick={() => handleProyectoEditConfirm(editingProyecto)}>
+                        <i className="fas fa-check"></i> Confirmar
+                      </button>
+                      <button className="btn-cancel" onClick={handleProyectoEditCancel}>
+                        <i className="fas fa-times"></i> Cancelar
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <button className="btn-edit" onClick={() => handleProyectoEdit(proyecto)}>
+                      <i className="fas fa-edit"></i> Editar nombre
+                    </button>
+                    <button className="btn-delete" onClick={() => handleProyectoDelete(proyecto.id, proyecto.titulo)}>
+                      <i className="fas fa-trash"></i> Eliminar
+                    </button>
+                  </>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
  
          <button className="btn-create" onClick={() => setShowProyectoForm(true)}>Crear Nuevo Proyecto</button>
          {showProyectoForm && (

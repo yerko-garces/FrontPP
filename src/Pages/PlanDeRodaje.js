@@ -651,7 +651,7 @@ const PlanDeRodaje = () => {
                       />
                     ))}
                     <button onClick={agregarEtiqueta} style={estiloBoton('blue')}>Agregar Etiqueta</button>
-                    <button onClick={handleAsociarElementos} style={estiloBoton('green')}>Asociar Elementos al Plan</button>
+                    <button onClick={handleAsociarElementos} style={estiloBoton('green')}>Guardar</button>
                   </div>
                 </div>
               )}
